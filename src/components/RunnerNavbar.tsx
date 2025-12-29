@@ -182,10 +182,6 @@ export default function RunnerNavbar() {
                     <User size={18} className="text-gray-400" />
                     <span>Runner Profile</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer gap-3 py-3">
-                    <ShieldCheck size={18} className="text-gray-400" />
-                    <span>Verification</span>
-                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="cursor-pointer gap-3 py-3 text-red-600 focus:text-red-600 focus:bg-red-50">
                     <LogOut size={18} />

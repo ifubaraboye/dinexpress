@@ -8,7 +8,10 @@ import { cn } from "@/lib/utils";
 export default function App() {
   const location = useLocation();
   const isRunnerRoute = location.pathname.startsWith("/runner");
-  const isAuthRoute = location.pathname.startsWith("/login");
+  const isAuthRoute = 
+    location.pathname.startsWith("/login") || 
+    location.pathname.startsWith("/forgot-password") || 
+    location.pathname.startsWith("/reset-password");
 
   return (
     <CartProvider>

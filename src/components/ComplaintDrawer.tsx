@@ -56,7 +56,7 @@ export default function ComplaintDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent className="w-full rounded-t-[40px] border-none p-0 z-[100]">
+      <DrawerContent className="w-full rounded-t-[40px] border-none p-0">
         <div className="max-w-2xl mx-auto w-full p-8 pb-12">
           <form onSubmit={handleSubmit}>
             <DrawerHeader className="px-0 pt-0 pb-8 text-left">

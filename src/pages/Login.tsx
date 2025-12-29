@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-export default function AuthPage() {
+export default function LoginPage() {
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -120,7 +120,9 @@ export default function AuthPage() {
                   </button>
                 </div>
                 <div className="flex justify-end">
-                   <button type="button" className="text-[10px] font-bold uppercase tracking-wider text-gray-400 hover:text-red-600 cursor-pointer">Forgot password?</button>
+                   <Link to="/forgot-password" title="Reset your password">
+                     <button type="button" className="text-[10px] font-bold uppercase tracking-wider text-gray-400 hover:text-red-600 cursor-pointer">Forgot password?</button>
+                   </Link>
                 </div>
                 <Button 
                   type="submit" 
