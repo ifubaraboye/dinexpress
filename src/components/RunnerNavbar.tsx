@@ -169,11 +169,9 @@ export default function RunnerNavbar() {
              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-2 p-1 pr-3 rounded-full bg-gray-50 hover:bg-gray-100 transition-all cursor-pointer border border-transparent hover:border-gray-200 group">
-                    <div className="w-8 h-8 rounded-full overflow-hidden border border-white shadow-sm">
+                    <div className="w-10 h-10 rounded-full overflow-hidden border border-white shadow-sm">
                        <img src={user.avatar} alt="Runner" className="w-full h-full object-cover" />
                     </div>
-                    <span className="text-sm font-bold text-gray-700 group-hover:text-gray-900">Runner</span>
-                    <ChevronDown size={14} className="text-gray-400 group-hover:text-gray-600 transition-transform duration-200" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 mt-2">

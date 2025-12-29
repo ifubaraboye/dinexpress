@@ -50,7 +50,7 @@ export default function Navbar() {
     { to: "/", label: "Home", icon: Home },
     { to: "/search", label: "Search", icon: Search },
     { to: "/reorder", label: "Orders", icon: RotateCcw },
-    { to: "/dashboard", label: "Dashboard", icon: RotateCcw },
+    // { to: "/dashboard", label: "Dashboard", icon: RotateCcw },
   ];
 
   const restaurants = [
