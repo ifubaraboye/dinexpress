@@ -50,6 +50,7 @@ export default function Navbar() {
     { to: "/", label: "Home", icon: Home },
     { to: "/search", label: "Search", icon: Search },
     { to: "/reorder", label: "Orders", icon: RotateCcw },
+    { to: "/dashboard", label: "Dashboard", icon: RotateCcw },
   ];
 
   const restaurants = [
@@ -75,7 +76,7 @@ export default function Navbar() {
 
   return (
     <header 
-      className={`fixed top-0 left-0 right-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md transition-transform duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-40 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md transition-transform duration-300 ${
         visible ? "translate-y-0" : "-translate-y-full"
       }`}
     >
@@ -215,12 +216,12 @@ export default function Navbar() {
              {/* Profile Dropdown */}
              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 p-1 pr-3 rounded-full bg-gray-50 hover:bg-gray-100 transition-all cursor-pointer border border-transparent hover:border-gray-200 group">
-                    <div className="w-8 h-8 rounded-full overflow-hidden border border-white shadow-sm">
+                  <button className="flex items-center gap-2  rounded-full bg-gray-50 hover:bg-gray-100 transition-all cursor-pointer border border-transparent hover:border-gray-200 group">
+                    <div className="w-10 h-10 rounded-full overflow-hidden border border-white shadow-sm">
                        <img src={user.avatar} alt="User" className="w-full h-full object-cover" />
                     </div>
-                    <span className="text-sm font-bold text-gray-700 group-hover:text-gray-900">{user.name}</span>
-                    <ChevronDown size={14} className="text-gray-400 group-hover:text-gray-600 transition-transform duration-200" />
+                    {/* <span className="text-sm font-bold text-gray-700 group-hover:text-gray-900">{user.name}</span> */}
+                    {/* <ChevronDown size={14} className="text-gray-400 group-hover:text-gray-600 transition-transform duration-200" /> */}
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 mt-2">
@@ -231,11 +232,11 @@ export default function Navbar() {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/reorder")} className="cursor-pointer gap-3 py-3">
                     <ShoppingBag size={18} className="text-gray-400" />
-                    <span>Order History</span>
+                    <span>Orders</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer gap-3 py-3">
-                    <Heart size={18} className="text-gray-400" />
-                    <span>Favorites</span>
+                  <DropdownMenuItem onClick={() => navigate("/dashboard")} className="cursor-pointer gap-3 py-3">
+                    <ShoppingBag size={18} className="text-gray-400" />
+                    <span>Dashboard</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="cursor-pointer gap-3 py-3 text-red-600 focus:text-red-600 focus:bg-red-50">

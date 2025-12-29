@@ -19,6 +19,7 @@ export default function LoginPage() {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
+      localStorage.setItem("token", "mock-token-123");
       toast.success("Welcome back");
       navigate("/");
     }, 1000);

@@ -151,13 +151,6 @@ export function FloatingCart({ deliveryFee = 500 }: { deliveryFee?: number }) {
   const proceedToCheckout = () => {
     setError(null);
 
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    if (!token) {
-      navigate("/auth/signin", { replace: true });
-      return;
-    }
-
     // Validation: Address is ALWAYS required now
     if (gift) {
       if (!giftName || !giftPhone || !giftAddress) {

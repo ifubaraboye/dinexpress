@@ -11,7 +11,9 @@ export default function App() {
   const isAuthRoute = 
     location.pathname.startsWith("/login") || 
     location.pathname.startsWith("/forgot-password") || 
-    location.pathname.startsWith("/reset-password");
+    location.pathname.startsWith("/reset-password") ||
+    location.pathname.startsWith("/checkout");
+  const isDashboardRoute = location.pathname.startsWith("/dashboard");
 
   return (
     <CartProvider>

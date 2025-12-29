@@ -64,7 +64,7 @@ export default function RunnerNavbar() {
 
   return (
     <header 
-      className={`fixed top-0 left-0 right-0 z-[100] w-full border-b border-gray-100 bg-white/80 backdrop-blur-md transition-transform duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-40 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md transition-transform duration-300 ${
         visible ? "translate-y-0" : "-translate-y-full"
       }`}
     >

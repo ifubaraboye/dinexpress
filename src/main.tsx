@@ -16,9 +16,11 @@ import ChangeEmail from "./pages/profile/ChangeEmail";
 import ChangeAddress from "./pages/profile/ChangeAddress";
 import Reorder from "./pages/Reorder";
 import TrackOrder from "./pages/TrackOrder";
+import Checkout from "./pages/Checkout";
 import LoginPage from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import DashboardPage from "./pages/dashboard/Dashboard";
 import NotFoundPage from "./components/NotFoundPage";
 import RunnerHome from "./pages/Runner";
 import RunnerHistory from "./pages/RunnerHistory";
@@ -39,9 +41,11 @@ const router = createBrowserRouter([
       { path: "search", element: <Search /> },
       { path: "reorder", element: <Reorder /> },
       { path: "track/:orderId", element: <TrackOrder /> },
+      { path: "checkout", element: <Checkout /> },
       { path: "login", element: <LoginPage /> },
       { path: "forgot-password", element: <ForgotPassword /> },
       { path: "reset-password", element: <ResetPassword /> },
+      { path: "dashboard", element: <DashboardPage /> },
       { path: "runner", children: [
         { index: true, element: <RunnerHome /> },
         { path: "history", element: <RunnerHistory /> },
