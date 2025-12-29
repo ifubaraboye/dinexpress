@@ -1,7 +1,17 @@
 "use client";
 
-import { Link, useLocation } from "react-router-dom";
-import { Menu, Home, Package, History, User, ChevronDown } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { 
+  Menu, 
+  Home, 
+  Package, 
+  History, 
+  User, 
+  ChevronDown, 
+  LogOut, 
+  Settings,
+  ShieldCheck
+} from "lucide-react";
 import {
   Drawer,
   DrawerContent,
@@ -9,6 +19,14 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
@@ -17,12 +35,17 @@ export default function RunnerNavbar() {
   const [visible, setVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const user = {
+    name: "Runner",
+    avatar: "/profilephoto.svg"
+  };
 
   const links = [
     { to: "/runner", label: "Dashboard", icon: Home },
     { to: "/runner/orders", label: "Orders", icon: Package },
     { to: "/runner/history", label: "History", icon: History },
-    { to: "/runner/profile", label: "Profile", icon: User },
   ];
 
   useEffect(() => {
@@ -35,14 +58,13 @@ export default function RunnerNavbar() {
       }
       setLastScrollY(currentScrollY);
     };
-
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
   return (
     <header 
-      className={`fixed top-0 left-0 right-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md transition-transform duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-[100] w-full border-b border-gray-100 bg-white/80 backdrop-blur-md transition-transform duration-300 ${
         visible ? "translate-y-0" : "-translate-y-full"
       }`}
     >
@@ -54,26 +76,20 @@ export default function RunnerNavbar() {
             <div className="lg:hidden">
               <Drawer direction="left" open={open} onOpenChange={setOpen}>
                 <DrawerTrigger asChild>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" className="rounded-xl">
                     <Menu className="h-6 w-6" />
                   </Button>
                 </DrawerTrigger>
-                <DrawerContent className="h-full w-[280px] rounded-r-2xl rounded-l-none outline-none">
-                  <DrawerHeader className="text-left px-6 py-4 border-b">
+                <DrawerContent className="h-full w-[280px] rounded-r-2xl rounded-l-none outline-none flex flex-col">
+                  <DrawerHeader className="text-left px-6 py-4 border-b border-gray-50 flex-shrink-0">
                     <DrawerTitle className="text-xl font-bold text-red-600">
                       <div className="flex items-center gap-3 group select-none">
-                        <img 
-                          src="/dinelogonew.png" 
-                          alt="DineXpress Logo" 
-                          width={40} 
-                          height={40} 
-                          className="object-contain"
-                        />
+                        <img src="/dinelogonew.png" alt="Logo" width={32} height={32} />
                         <p>DineXpress</p>
                       </div>
                     </DrawerTitle>
                   </DrawerHeader>
-                  <div className="flex flex-col gap-2 p-4 overflow-y-auto">
+                  <div className="flex flex-col flex-1 overflow-y-auto p-4 gap-2">
                     {links.map((link) => {
                       const Icon = link.icon;
                       const isActive = location.pathname === link.to;
@@ -83,16 +99,42 @@ export default function RunnerNavbar() {
                           to={link.to}
                           onClick={() => setOpen(false)}
                           className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                            isActive
-                              ? "bg-red-50 text-red-600 font-medium"
-                              : "text-gray-600 hover:bg-gray-100"
+                            isActive ? "bg-red-50 text-red-600 font-bold" : "text-gray-600 hover:bg-gray-50"
                           }`}
                         >
-                          <Icon className={`h-5 w-5 ${isActive ? "text-red-600" : "text-gray-500"}`} />
+                          <Icon className={`h-5 w-5 ${isActive ? "text-red-600" : "text-gray-400"}`} />
                           {link.label}
                         </Link>
                       );
                     })}
+                  </div>
+
+                  <div className="mt-auto p-4 border-t border-gray-50 flex-shrink-0">
+                    <div className="px-4 mb-4 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 shadow-sm">
+                        <img src={user.avatar} alt="Runner" className="w-full h-full object-cover" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900 leading-none">Runner</p>
+                        <p className="text-[10px] font-medium text-gray-400 mt-1">Dispatch Account</p>
+                      </div>
+                    </div>
+                    <Link
+                      to="/runner/profile"
+                      onClick={() => setOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+                        location.pathname === "/runner/profile" ? "bg-red-50 text-red-600 font-bold" : "text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      <User className="h-5 w-5" />
+                      Manage Profile
+                    </Link>
+                    <button
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-colors mt-1"
+                    >
+                      <LogOut className="h-5 w-5" />
+                      <span className="font-medium text-sm">Sign Out</span>
+                    </button>
                   </div>
                 </DrawerContent>
               </Drawer>
@@ -100,34 +142,57 @@ export default function RunnerNavbar() {
 
             {/* Branding */}
             <Link to="/runner" className="flex items-center gap-3 group select-none"> 
-              <div className="relative transition-transform duration-300 ease-in-out group-hover:scale-110">
-                <img 
-                  src="/dinelogonew.png" 
-                  alt="DineXpress Logo" 
-                  width={40} 
-                  height={40} 
-                  className="object-contain"
-                />
-              </div>
-              <span className="text-xl font-bold tracking-tight text-gray-900 transition-colors duration-300 group-hover:text-[#D35454]">
+              <img src="/dinelogonew.png" alt="Logo" width={36} height={36} className="transition-transform group-hover:scale-110" />
+              <span className="text-xl font-black tracking-tighter text-gray-900 group-hover:text-[#D35454] transition-colors">
                 DineXpress
               </span>
             </Link>
           </div>
 
           {/* Desktop Links */}
-          <div className="hidden lg:flex items-center gap-6">
-             {links.map((link) => (
-               <Link 
-                 key={link.to} 
-                 to={link.to} 
-                 className={`text-sm font-medium transition-colors ${
-                   location.pathname === link.to ? "text-red-600" : "text-gray-600 hover:text-red-600"
-                 }`}
-               >
-                 {link.label}
-               </Link>
-             ))}
+          <div className="hidden lg:flex items-center gap-8">
+             <div className="flex items-center gap-6 mr-4">
+                {links.map((link) => (
+                  <Link 
+                    key={link.to} 
+                    to={link.to} 
+                    className={`text-sm font-bold transition-colors ${
+                      location.pathname === link.to ? "text-red-600" : "text-gray-500 hover:text-red-600"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+             </div>
+
+             {/* Profile Dropdown */}
+             <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 p-1 pr-3 rounded-full bg-gray-50 hover:bg-gray-100 transition-all cursor-pointer border border-transparent hover:border-gray-200 group">
+                    <div className="w-8 h-8 rounded-full overflow-hidden border border-white shadow-sm">
+                       <img src={user.avatar} alt="Runner" className="w-full h-full object-cover" />
+                    </div>
+                    <span className="text-sm font-bold text-gray-700 group-hover:text-gray-900">Runner</span>
+                    <ChevronDown size={14} className="text-gray-400 group-hover:text-gray-600 transition-transform duration-200" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 mt-2">
+                  <DropdownMenuLabel className="font-bold text-xs uppercase tracking-widest text-gray-400 py-3">Dispatch</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => navigate("/runner/profile")} className="cursor-pointer gap-3 py-3">
+                    <User size={18} className="text-gray-400" />
+                    <span>Runner Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer gap-3 py-3">
+                    <ShieldCheck size={18} className="text-gray-400" />
+                    <span>Verification</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="cursor-pointer gap-3 py-3 text-red-600 focus:text-red-600 focus:bg-red-50">
+                    <LogOut size={18} />
+                    <span>Sign Out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+             </DropdownMenu>
           </div>
 
         </div>

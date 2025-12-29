@@ -4,7 +4,8 @@ import { FloatingCart } from "../components/FloatingCart";
 import { useCart } from "../../context/CartContext";
 import { RestaurantProvider } from "../../context/RestaurantContext";
 import { toast } from "sonner";
-import { Clock, Package, RotateCcw } from "lucide-react";
+import { Clock, Package, RotateCcw, AlertCircle } from "lucide-react";
+import ComplaintDrawer from "../components/ComplaintDrawer";
 import { cn } from "@/lib/utils";
 
 // Mock Data Types
@@ -116,7 +117,7 @@ function StatusBadge({ status }: { status: OrderStatus }) {
   );
 }
 
-function OrderCard({ order, isHistory }: { order: Order; isHistory?: boolean }) {
+function OrderCard({ order, isHistory, onReport }: { order: Order; isHistory?: boolean; onReport?: (id: string) => void }) {
   const { addItem } = useCart();
 
   const handleReorder = () => {
@@ -167,13 +168,21 @@ function OrderCard({ order, isHistory }: { order: Order; isHistory?: boolean }) 
         </div>
 
         {isHistory ? (
-          <button 
-            onClick={handleReorder}
-            className="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition-colors active:scale-95 shadow-sm shadow-red-100"
-          >
-            <RotateCcw size={14} />
-            Reorder
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => onReport?.(order.id)}
+              className="px-4 py-2.5 bg-gray-50 text-gray-400 rounded-xl text-xs font-bold hover:text-red-500 transition-colors"
+            >
+              Report
+            </button>
+            <button 
+              onClick={handleReorder}
+              className="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition-colors active:scale-95 shadow-sm shadow-red-100"
+            >
+              <RotateCcw size={14} />
+              Reorder
+            </button>
+          </div>
         ) : (
           <Link 
             to={`/track/${order.id}`}
@@ -189,6 +198,13 @@ function OrderCard({ order, isHistory }: { order: Order; isHistory?: boolean }) 
 
 export default function ReorderPage() {
   const [activeTab, setActiveTab] = useState<"active" | "history">("active");
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState("");
+
+  const handleReportIssue = (orderId: string) => {
+    setSelectedOrderId(orderId);
+    setIsDrawerOpen(true);
+  };
 
   return (
     <div className="bg-[#FAFAFA] min-h-screen pb-40 pt-20 overflow-y-auto">
@@ -268,7 +284,7 @@ export default function ReorderPage() {
                   {PREVIOUS_ORDERS.length > 0 ? (
                     PREVIOUS_ORDERS.map((order) => (
                       <RestaurantProvider key={order.id} value={{ name: order.restaurant, deliveryFee: 500 }}>
-                        <OrderCard order={order} isHistory />
+                        <OrderCard order={order} isHistory onReport={handleReportIssue} />
                       </RestaurantProvider>
                     ))
                   ) : (
@@ -283,6 +299,12 @@ export default function ReorderPage() {
       </div>
 
       <FloatingCart />
+
+      <ComplaintDrawer 
+        isOpen={isDrawerOpen} 
+        onClose={() => setIsDrawerOpen(false)} 
+        orderId={selectedOrderId} 
+      />
     </div>
   );
 }

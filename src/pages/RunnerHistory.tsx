@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Copy, AlertCircle, CheckCircle2, Clock, MapPin } from "lucide-react";
-import ComplaintModal from "../components/ComplaintModal";
+import ComplaintDrawer from "../components/ComplaintDrawer";
 import { cn } from "@/lib/utils";
 
 interface Order {
@@ -20,7 +20,46 @@ interface RunnerHistoryPageProps {
   runnerId?: string;
 }
 
-export default function RunnerHistory({ orders: initialOrders = [], runnerId }: RunnerHistoryPageProps) {
+const MOCK_RUNNER_HISTORY: Order[] = [
+  {
+    id: "ord_active_99",
+    runner_id: "me",
+    delivery_address: "Hostel B, Room 204",
+    total: 4500,
+    commission: 450,
+    status: "PENDING",
+    order_items: [{ menu_items: [{ cafeterias: { name: "Dunnkayce" } }] }]
+  },
+  {
+    id: "ord_hist_001",
+    runner_id: "me",
+    delivery_address: "LTL, Floor 3",
+    total: 2800,
+    commission: 280,
+    status: "DELIVERED",
+    order_items: [{ menu_items: [{ cafeterias: { name: "Grills" } }] }]
+  },
+  {
+    id: "ord_hist_002",
+    runner_id: "me",
+    delivery_address: "Hostel A, Room 101",
+    total: 5500,
+    commission: 550,
+    status: "DELIVERED",
+    order_items: [{ menu_items: [{ cafeterias: { name: "The Laughters Kitchen" } }] }]
+  },
+  {
+    id: "ord_hist_003",
+    runner_id: "me",
+    delivery_address: "Main Gate, Security Post",
+    total: 1200,
+    commission: 120,
+    status: "DELIVERED",
+    order_items: [{ menu_items: [{ cafeterias: { name: "BTO" } }] }]
+  }
+];
+
+export default function RunnerHistory({ orders: initialOrders = MOCK_RUNNER_HISTORY, runnerId }: RunnerHistoryPageProps) {
   const [orders] = useState<Order[]>(initialOrders);
   const [copied, setCopied] = useState<string | null>(null);
   const [complaintModalOpen, setComplaintModalOpen] = useState(false);
@@ -88,10 +127,11 @@ export default function RunnerHistory({ orders: initialOrders = [], runnerId }: 
         </section>
       </main>
 
-      <ComplaintModal
+      <ComplaintDrawer
         isOpen={complaintModalOpen}
         onClose={() => setComplaintModalOpen(false)}
         orderId={selectedOrderId}
+        userRole="runner"
       />
     </div>
   );
