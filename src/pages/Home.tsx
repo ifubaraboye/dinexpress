@@ -138,8 +138,8 @@ export default function Home() {
         <section>
           <div className="flex items-end justify-between mb-8">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Top Restaurants</h2>
-              <p className="text-gray-500 mt-2 font-medium">Curated selection for you</p>
+              <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Our Restaurants</h2>
+              <p className="text-gray-500 mt-2 font-medium">Curated selection for you.</p>
             </div>
           </div>
 

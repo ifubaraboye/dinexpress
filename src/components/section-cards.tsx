@@ -17,7 +17,7 @@ export function SectionCards() {
         <CardHeader>
           <CardDescription>Total Revenue</CardDescription>
           <CardTitle className="text-2xl font-black tabular-nums @[250px]/card:text-3xl tracking-tighter">
-            ₦1,250,400
+            ₦700,250,417
           </CardTitle>
           <CardAction>
             <Badge variant="outline" className="text-green-600 border-green-100 bg-green-50">
