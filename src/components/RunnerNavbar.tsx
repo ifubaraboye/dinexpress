@@ -43,7 +43,7 @@ export default function RunnerNavbar() {
   };
 
   const links = [
-    { to: "/runner", label: "Dashboard", icon: Home },
+    { to: "/runner", label: "Home", icon: Home },
     { to: "/runner/orders", label: "Orders", icon: Package },
     { to: "/runner/history", label: "History", icon: History },
   ];
