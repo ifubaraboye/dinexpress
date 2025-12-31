@@ -242,7 +242,7 @@ export function RestaurantLayout({
            </div>
         </div>
 
-        <FloatingCart deliveryFee={deliveryFee} />
+        <FloatingCart  />
       </div>
     </RestaurantProvider>
   );
