@@ -28,6 +28,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -57,7 +61,7 @@ export default function Navbar() {
     { to: "/dunnkayce", label: "Dunnkayce" },
     { to: "/grills", label: "Grills" },
     { to: "/bto", label: "BTO" },
-    { to: "/laughters-kitchen", label: "The Laughters Kitchen" },
+    { to: "/the-laughters-kitchen", label: "The Laughters Kitchen" },
   ];
 
   useEffect(() => {
@@ -238,6 +242,29 @@ export default function Navbar() {
                     <ShoppingBag size={18} className="text-gray-400" />
                     <span>Dashboard</span>
                   </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className="cursor-pointer gap-3 py-3">
+                      <Utensils size={18} className="text-gray-400" />
+                      <span>Restaurants</span>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                      <DropdownMenuSubContent className="w-48 rounded-xl ml-1">
+                        {restaurants.map((rest) => (
+                          <DropdownMenuItem 
+                            key={rest.to} 
+                            onClick={() => navigate(rest.to)}
+                            className="cursor-pointer py-2.5"
+                          >
+                            {rest.label}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                  </DropdownMenuSub>
+
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="cursor-pointer gap-3 py-3 text-red-600 focus:text-red-600 focus:bg-red-50">
                     <LogOut size={18} />
