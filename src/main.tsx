@@ -26,6 +26,9 @@ import RunnerHome from "./pages/Runner";
 import RunnerHistory from "./pages/RunnerHistory";
 import RunnerOrders from "./pages/Orders";
 import ActiveOrderDetails from "./pages/ActiveOrderDetails";
+import { ConvexProvider, ConvexReactClient } from "convex/react";
+
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
 const router = createBrowserRouter([
   {
@@ -101,6 +104,8 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
+    <ConvexProvider client={convex} >
     <RouterProvider router={router} />
+    </ConvexProvider>
   </StrictMode>
 );
