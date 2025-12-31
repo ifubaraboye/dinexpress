@@ -43,7 +43,7 @@ const CAFETERIAS: Cafeteria[] = [
     id: "cfdff904-fcf5-4902-a0e5-96c7cf850dde",
     name: "The Laughters Kitchen",
     image: "/laughheader.png",
-    route: "/laughters-kitchen",
+    route: "/the-laughters-kitchen",
     rating: 4.7,
     reviews: 210,
     deliveryFee: 500,
@@ -110,12 +110,14 @@ export default function Home() {
                 Order from your favorite campus cafeterias and get it delivered in minutes.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-2">
-                <Button className="bg-white text-red-600 cursor-pointer hover:bg-gray-100 font-bold h-12 px-8 rounded-full shadow-lg transition-transform hover:scale-105">
+                <Button className="bg-white text-red-600 cursor-pointer hover:bg-gray-100 font-bold h-12 px-8 rounded-full shadow-lg transition-transform hover:scale-105 border-none">
                   Order Now
                 </Button>
-                <Button variant="outline" className="border-white/30 text-red-600 cursor-pointer hover:text-white hover:bg-white/10 font-bold h-12 px-8 rounded-full backdrop-blur-sm">
-                  Reorder
-                </Button>
+                <Link to="/reorder">
+                  <Button variant="outline" className="border-white/30 text-white cursor-pointer hover:text-white hover:bg-white/10 font-bold h-12 px-8 rounded-full backdrop-blur-sm border-2">
+                    Reorder
+                  </Button>
+                </Link>
               </div>
            </div>
 
@@ -157,11 +159,6 @@ export default function Home() {
                     <Star size={12} className="text-yellow-500 fill-yellow-500" />
                     <span className="text-xs font-bold text-gray-900">{cafe.rating}</span>
                   </div>
-                  {/* {cafe.name === "DunnKayce" && (
-                    <div className="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-md uppercase tracking-wide">
-                      Popular
-                    </div>
-                  )} */}
                 </div>
 
                 {/* Content */}
@@ -194,10 +191,6 @@ export default function Home() {
               </Link>
             ))}
           </div>
-
-          {/* <Link to="/search" className="mt-8 flex sm:hidden items-center justify-center gap-2 w-full py-4 text-sm font-bold text-gray-600 bg-white rounded-2xl border border-gray-100 shadow-sm hover:bg-gray-50 transition-colors">
-            View All Restaurants <ArrowRight size={16} />
-          </Link> */}
         </section>
 
       </div>
