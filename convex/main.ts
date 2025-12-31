@@ -122,6 +122,7 @@ export const getMenuItemsWithDetails = query({
     return Promise.all(
       items.map(async item => {
         const product = await ctx.db.get("products", item.productId);
+        const category = product ? await ctx.db.get("categories", product.categoryId) : null;
 
         return {
           menuItemId: item._id,
@@ -135,6 +136,7 @@ export const getMenuItemsWithDetails = query({
           productName: product?.name,
           imageUrl: product?.imageUrl,
           categoryId: product?.categoryId,
+          categoryName: category?.name,
         };
       })
     );
@@ -144,6 +146,104 @@ export const getMenuItemsWithDetails = query({
 export const getAllProducts = query({
   handler: async (ctx) => {
     return await ctx.db.query("products").collect();
+  },
+});
+
+export const getAllCafeterias = query({
+  handler: async (ctx) => {
+    return await ctx.db.query("cafeterias").collect();
+  },
+});
+
+export const getCafeteriaByName = query({
+  args: { name: v.string() },
+  handler: async (ctx, { name }) => {
+    return await ctx.db
+      .query("cafeterias")
+      .withIndex("by_name", (q) => q.eq("name", name))
+      .unique();
+  },
+});
+
+export const searchMenuItems = query({
+  args: { query: v.string() },
+  handler: async (ctx, { query }) => {
+    if (!query) return [];
+
+    const lowerQuery = query.toLowerCase();
+    
+    // In a production app, you'd use a search index. 
+    // Here we'll simulate it by collecting all products and filtering.
+    const products = await ctx.db.query("products").collect();
+    const matchedProducts = products.filter(p => 
+      p.name.toLowerCase().includes(lowerQuery)
+    );
+
+    const results = [];
+    for (const product of matchedProducts) {
+      const menuItems = await ctx.db
+        .query("menuItems")
+        .withIndex("by_product", q => q.eq("productId", product._id))
+        .collect();
+
+      for (const item of menuItems) {
+        const cafeteria = await ctx.db.get("cafeterias", item.cafeteriaId);
+        const category = await ctx.db.get("categories", product.categoryId);
+
+        results.push({
+          id: item._id,
+          name: product.name,
+          price: item.price,
+          restaurant: cafeteria?.name || "Unknown",
+          image: product.imageUrl,
+          tag: category?.name || "Menu",
+          avgRating: item.avgRating ?? 0,
+          totalRatings: item.totalRatings ?? 0,
+        });
+      }
+    }
+
+    return results;
+  },
+});
+
+export const getMenuItemsByCategory = query({
+  args: { categoryName: v.string() },
+  handler: async (ctx, { categoryName }) => {
+    const category = await ctx.db
+      .query("categories")
+      .withIndex("by_name", q => q.eq("name", categoryName))
+      .unique();
+
+    if (!category) return [];
+
+    const products = await ctx.db
+      .query("products")
+      .withIndex("by_category", q => q.eq("categoryId", category._id))
+      .collect();
+
+    const results = [];
+    for (const product of products) {
+      const menuItems = await ctx.db
+        .query("menuItems")
+        .withIndex("by_product", q => q.eq("productId", product._id))
+        .collect();
+
+      for (const item of menuItems) {
+        const cafeteria = await ctx.db.get("cafeterias", item.cafeteriaId);
+        results.push({
+          id: item._id,
+          name: product.name,
+          price: item.price,
+          restaurant: cafeteria?.name || "Unknown",
+          image: product.imageUrl,
+          tag: category.name,
+          avgRating: item.avgRating ?? 0,
+          totalRatings: item.totalRatings ?? 0,
+        });
+      }
+    }
+    return results;
   },
 });
 
