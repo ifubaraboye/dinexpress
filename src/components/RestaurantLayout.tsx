@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState,} from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, Star, Clock, MapPin, ChevronLeft, Share2, Info } from "lucide-react";
 import { RestaurantProvider } from "../../context/RestaurantContext";
 import { FloatingCart } from "@/components/FloatingCart";
@@ -9,12 +9,15 @@ import type { FoodItem } from "@/components/ItemSection";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 
 interface RestaurantLayoutProps {
-  id: string;
-  name: string;
+  id?: string; // Optional Convex Id<"cafeterias">
+  name: string; // Used as fallback or primary key
   image: string;
   deliveryFee: number;
   avgWait: string;
@@ -30,7 +33,7 @@ const getValidImage = (url: any): string => {
 };
 
 export function RestaurantLayout({
-  id,
+  id: initialId,
   name,
   image,
   deliveryFee,
@@ -39,12 +42,28 @@ export function RestaurantLayout({
   reviews,
 }: RestaurantLayoutProps) {
   const navigate = useNavigate();
-  const [items, setItems] = useState<FoodItem[]>([]);
-  const [rawMenu, setRawMenu] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [scrolled, setScrolled] = useState(false);
+
+  // Try to get ID from state if not provided
+  const cafeteriaIdFromState = location.state?.cafeteriaId;
+  const finalId = initialId || cafeteriaIdFromState;
+
+  // Query cafeteria by name if ID is missing (robustness for refreshes)
+  const cafeteria = useQuery(api.main.getCafeteriaByName, 
+    !finalId ? { name } : "skip" as any
+  );
+
+  const cafeteriaId = finalId || cafeteria?._id;
+
+  // Use Convex query for menu items
+  const menuData = useQuery(api.main.getMenuItemsWithDetails, 
+    cafeteriaId ? { cafeteriaId: cafeteriaId as Id<"cafeterias"> } : "skip" as any
+  );
+
+  const loading = menuData === undefined || (cafeteria === undefined && !finalId);
+  const error = menuData === null;
 
   // Scroll effect for sticky header visual
   useEffect(() => {
@@ -53,30 +72,14 @@ export function RestaurantLayout({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await fetch(`http://localhost:5000/cafeterias/${id}/menu`);
-        if (!res.ok) throw new Error("Failed to fetch menu");
-        const menuItems = await res.json();
-        setRawMenu(menuItems);
-      } catch (err: any) {
-        setError(err?.message ?? "Failed to load menu");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [id]);
-
   const groupedSections = useMemo(() => {
+    if (!menuData) return [];
+
     const query = searchQuery.trim().toLowerCase();
     const customCategoryNames: Record<string, string> = {
       drinks: "Drinks",
       rice: "Rice & Bowls",
-      grill_and_proteins: "Grills & Proteins",
+      grills_and_proteins: "Grills & Proteins",
       soups_sauces_swallows: "Soups & Swallows",
       snacks: "Snacks",
       fruits_salads: "Fruits & Salads",
@@ -84,7 +87,6 @@ export function RestaurantLayout({
       pastries: "Pastries",
     };
     
-    // Order preferences
     const desiredOrder = [
       "Rice & Bowls",
       "Grills & Proteins",
@@ -96,30 +98,30 @@ export function RestaurantLayout({
       "Fruits & Salads",
     ];
 
-    const getCategory = (m: any): string => {
-      const raw = (m.category_slug || m.category_name || m.category || "Menu") as string;
+    const getCategory = (item: any): string => {
+      const raw = (item.categoryName || "Menu") as string;
       const slug = raw.trim().toLowerCase().replace(/\s+/g, "_");
       return customCategoryNames[slug] || raw;
     };
 
     const menuToUse = query
-      ? rawMenu.filter((m) =>
-          (m.name || m.product_name || m.item_name || "").toLowerCase().includes(query)
+      ? menuData.filter((m) =>
+          (m.productName || "").toLowerCase().includes(query)
         )
-      : rawMenu;
+      : menuData;
 
     const groups = new Map<string, FoodItem[]>();
     menuToUse.forEach((m) => {
       const title = getCategory(m);
       const item: FoodItem = {
-        id: String(m.id ?? m.menu_item_id ?? crypto.randomUUID()),
-        name: m.product_name ?? m.name ?? m.item_name ?? "Item",
-        price: Number(m.price ?? 0),
-        rating: Number(Number(m.avg_rating ?? 0).toFixed(1)),
-        reviews: Number(m.ratings_count ?? 0),
-        waitTime: avgWait,
-        image: getValidImage(m.image_url || m.image),
-        quantity_available: m.quantity_available,
+        id: m.menuItemId,
+        name: m.productName ?? "Item",
+        price: m.price,
+        rating: m.avgRating,
+        reviews: m.totalRatings,
+        waitTime: `${m.avgWaitTimeMinutes} mins`,
+        image: getValidImage(m.imageUrl),
+        quantity_available: m.quantityAvailable,
       };
       if (!groups.has(title)) groups.set(title, []);
       groups.get(title)!.push(item);
@@ -132,15 +134,14 @@ export function RestaurantLayout({
       return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
     });
     return sections;
-  }, [rawMenu, searchQuery, avgWait]);
+  }, [menuData, searchQuery]);
 
   return (
     <RestaurantProvider value={{ name, deliveryFee }}>
       <div className="bg-white min-h-screen w-full overflow-x-hidden">
         
         {/* Navigation Bar (Floating/Sticky) */}
-
-          
+        
 
         {/* Immersive Hero */}
         <div className="relative h-[45vh] lg:h-[55vh] w-full group overflow-hidden">
@@ -214,8 +215,8 @@ export function RestaurantLayout({
                        <Info size={32} />
                      </div>
                      <h3 className="text-xl font-bold text-gray-900">Menu unavailable</h3>
-                     <p className="text-gray-500 mt-2 max-w-xs">{error}</p>
-                     <Button variant="outline" className="mt-6 rounded-xl" onClick={() => window.location.reload()}>
+                     <p className="text-gray-500 mt-2 max-w-xs">There was an issue loading the menu.</p>
+                     <Button variant="outline" className="mt-6 rounded-xl cursor-pointer" onClick={() => window.location.reload()}>
                        Try Again
                      </Button>
                    </div>
@@ -230,7 +231,7 @@ export function RestaurantLayout({
                     <p className="text-gray-400 font-medium text-lg">No items match your search.</p>
                     <button 
                       onClick={() => setSearchQuery("")}
-                      className="text-red-600 font-bold mt-2 hover:underline"
+                      className="text-red-600 font-bold mt-2 hover:underline cursor-pointer"
                     >
                       Clear search
                     </button>
