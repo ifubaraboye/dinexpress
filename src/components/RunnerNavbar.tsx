@@ -175,7 +175,7 @@ export default function RunnerNavbar() {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 mt-2">
-                  <DropdownMenuLabel className="font-bold text-xs uppercase tracking-widest text-gray-400 py-3">Dispatch</DropdownMenuLabel>
+                  <DropdownMenuLabel className="font-bold text-xs uppercase tracking-widest text-gray-400 py-3">ACCOUNT</DropdownMenuLabel>
                   <DropdownMenuItem onClick={() => navigate("/runner/profile")} className="cursor-pointer gap-3 py-3">
                     <User size={18} className="text-gray-400" />
                     <span>Runner Profile</span>
