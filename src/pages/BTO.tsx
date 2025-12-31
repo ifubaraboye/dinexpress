@@ -4,7 +4,6 @@ import { RestaurantLayout } from "../components/RestaurantLayout";
 
 export default function BTO() {
   const restaurantInfo = {
-    id: "f02f9ee6-1ed7-484c-8711-eebf39aad236",
     name: "BTO",
     image: "/btoheader.png",
     deliveryFee: 500,
