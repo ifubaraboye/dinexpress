@@ -40,7 +40,7 @@ const router = createBrowserRouter([
       { path: "dunnkayce", element: <Dunnkayce /> },
       { path: "grills", element: <Grills /> },
       { path: "bto", element: <BTO /> },
-      { path: "laughters-kitchen", element: <Laughters /> },
+      { path: "the-laughters-kitchen", element: <Laughters /> },
       { path: "search", element: <Search /> },
       { path: "reorder", element: <Reorder /> },
       { path: "track/:orderId", element: <TrackOrder /> },
