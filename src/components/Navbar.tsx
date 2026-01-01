@@ -42,7 +42,6 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [restaurantsOpen, setRestaurantsOpen] = useState(false);
   const [visible, setVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -57,7 +56,6 @@ export default function Navbar() {
     { to: "/", label: "Home", icon: Home },
     { to: "/search", label: "Search", icon: Search },
     { to: "/reorder", label: "Orders", icon: RotateCcw },
-    // { to: "/dashboard", label: "Dashboard", icon: RotateCcw },
   ];
 
   const restaurants = [
@@ -68,18 +66,23 @@ export default function Navbar() {
   ];
 
   useEffect(() => {
+    setVisible(true);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    let lastY = window.scrollY;
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      if (currentScrollY > lastScrollY && currentScrollY > 10) {
+      if (currentScrollY > lastY && currentScrollY > 10) {
         setVisible(false);
       } else {
         setVisible(true);
       }
-      setLastScrollY(currentScrollY);
+      lastY = currentScrollY;
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();
@@ -132,7 +135,20 @@ export default function Navbar() {
                       );
                     })}
 
-                    <div className="mt-2 pt-2 border-t border-gray-50">
+                    {isAdmin && (
+                      <Link
+                        to="/dashboard"
+                        onClick={() => setOpen(false)}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+                          location.pathname === "/dashboard" ? "bg-red-50 text-red-600 font-bold" : "text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        <RotateCcw className={`h-5 w-5 ${location.pathname === "/dashboard" ? "text-red-600" : "text-gray-400"}`} />
+                        Dashboard
+                      </Link>
+                    )}
+
+                    <div className="border-t border-gray-50">
                       <button
                         onClick={() => setRestaurantsOpen(!restaurantsOpen)}
                         className="flex w-full items-center justify-between px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors"

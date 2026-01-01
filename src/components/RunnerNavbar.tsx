@@ -32,7 +32,6 @@ import { useUser, useClerk } from "@clerk/clerk-react";
 export default function RunnerNavbar() {
   const [open, setOpen] = useState(false);
   const [visible, setVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -46,18 +45,23 @@ export default function RunnerNavbar() {
   ];
 
   useEffect(() => {
+    setVisible(true);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    let lastY = window.scrollY;
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      if (currentScrollY > lastScrollY && currentScrollY > 10) {
+      if (currentScrollY > lastY && currentScrollY > 10) {
         setVisible(false);
       } else {
         setVisible(true);
       }
-      setLastScrollY(currentScrollY);
+      lastY = currentScrollY;
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();

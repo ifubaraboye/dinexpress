@@ -55,10 +55,10 @@ export default function ComplaintDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent className="w-full rounded-t-[40px] border-none p-0">
-        <div className="max-w-2xl mx-auto w-full p-8 pb-12">
-          <form onSubmit={handleSubmit}>
-            <DrawerHeader className="px-0 pt-0 pb-8 text-left">
+      <DrawerContent className="w-full rounded-t-[40px] border-none p-0 outline-none max-h-[90vh] flex flex-col">
+        <div className="max-w-2xl mx-auto w-full flex flex-col h-full overflow-hidden">
+          <form onSubmit={handleSubmit} className="flex flex-col h-full">
+            <DrawerHeader className="px-8 pt-8 pb-4 text-left flex-shrink-0">
               <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 mb-4">
                  <AlertCircle size={24} />
               </div>
@@ -70,44 +70,46 @@ export default function ComplaintDrawer({
               </p>
             </DrawerHeader>
 
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">Description</label>
-                <Textarea 
-                  value={report}
-                  onChange={(e) => setReport(e.target.value)}
-                  placeholder="Ex: My order was missing items, or the delivery was delayed..."
-                  className="min-h-[160px] rounded-3xl bg-gray-50 border-transparent focus:bg-white focus:border-gray-100 transition-all resize-none p-6 text-base font-medium placeholder:text-gray-300"
-                  required
-                />
-              </div>
+            <div className="flex-1 overflow-y-auto no-scrollbar px-8 pb-4">
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">Description</label>
+                  <Textarea 
+                    value={report}
+                    onChange={(e) => setReport(e.target.value)}
+                    placeholder="Ex: My order was missing items, or the delivery was delayed..."
+                    className="min-h-[160px] rounded-3xl bg-gray-50 border-transparent focus:bg-white focus:border-gray-100 transition-all resize-none p-6 text-base font-medium placeholder:text-gray-300"
+                    required
+                  />
+                </div>
 
-              <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-start gap-3">
-                 <InfoIcon size={18} className="text-amber-600 shrink-0 mt-0.5" />
-                 <p className="text-xs font-semibold text-amber-800 leading-relaxed">
-                   Our support team will review this and get back to you via email within 30 minutes.
-                 </p>
+                <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-start gap-3">
+                   <InfoIcon size={18} className="text-amber-600 shrink-0 mt-0.5" />
+                   <p className="text-xs font-semibold text-amber-800 leading-relaxed">
+                     Our support team will review this and get back to you via email within 30 minutes.
+                   </p>
+                </div>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-4">
-                <DrawerClose asChild>
-                  <button type="button" className="h-14 rounded-2xl font-bold text-gray-500 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
-                    Cancel
-                  </button>
-                </DrawerClose>
-                <button 
-                  type="submit"
-                  disabled={loading || report.trim().length < 10}
-                  className="h-14 rounded-2xl font-bold bg-red-600 text-white hover:bg-red-700 transition-colors shadow-lg shadow-red-100 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  {loading ? <Loader2 className="animate-spin" size={20} /> : (
-                    <>
-                      <Send size={18} />
-                      <span>Submit Report</span>
-                    </>
-                  )}
+            <div className="grid grid-cols-2 gap-4 pt-6 px-8 pb-10 flex-shrink-0 border-t border-gray-50 bg-white">
+              <DrawerClose asChild>
+                <button type="button" className="h-14 rounded-2xl font-bold text-gray-500 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
+                  Cancel
                 </button>
-              </div>
+              </DrawerClose>
+              <button 
+                type="submit"
+                disabled={loading || report.trim().length < 10}
+                className="h-14 rounded-2xl font-bold bg-red-600 text-white hover:bg-red-700 transition-colors shadow-lg shadow-red-100 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {loading ? <Loader2 className="animate-spin" size={20} /> : (
+                  <>
+                    <Send size={18} />
+                    <span>Submit Report</span>
+                  </>
+                )}
+              </button>
             </div>
           </form>
         </div>
