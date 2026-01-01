@@ -1,13 +1,21 @@
-import { useEffect, useState } from "react";
+"use client";
+
 import { Link } from "react-router-dom";
-import { ChevronRight, DollarSign, Package, TrendingUp, MapPin } from "lucide-react";
+import { ChevronRight, DollarSign, TrendingUp, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 export default function RunnerDashboard() {
-  const [loading, setLoading] = useState(false);
-  const [earnings, setEarnings] = useState({ today: 4500, week: 32000, total: 150000 });
-  const [availableOrders, setAvailableOrders] = useState(3);
-  const [isOnline, setIsOnline] = useState(true);
+  const stats = useQuery(api.orders.getRunnerStats);
+
+  if (stats === undefined) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="animate-spin text-red-600" size={32} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white text-gray-900 pb-20 font-sans pt-16">
@@ -23,22 +31,22 @@ export default function RunnerDashboard() {
            
            <div className="grid grid-cols-2 gap-4">
               <div className="bg-gray-50 rounded-[32px] p-6 border border-gray-100 flex flex-col justify-between h-40">
-                 <div className="w-10 h-10 rounded-2xl bg-green-100 text-green-600 flex items-center justify-center">
+                 {/* <div className="w-10 h-10 rounded-2xl bg-green-100 text-green-600 flex items-center justify-center">
                     <DollarSign size={20} />
-                 </div>
+                 </div> */}
                  <div>
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Today</span>
-                    <p className="text-3xl font-black text-gray-900 mt-1">₦{earnings.today.toLocaleString()}</p>
+                    <p className="text-3xl font-black text-gray-900 mt-1">₦{stats.todayEarnings.toLocaleString()}</p>
                  </div>
               </div>
 
               <div className="bg-gray-50 rounded-[32px] p-6 border border-gray-100 flex flex-col justify-between h-40">
-                 <div className="w-10 h-10 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                 {/* <div className="w-10 h-10 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center">
                     <TrendingUp size={20} />
-                 </div>
+                 </div> */}
                  <div>
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">This Week</span>
-                    <p className="text-3xl font-black text-gray-900 mt-1">₦{earnings.week.toLocaleString()}</p>
+                    <p className="text-3xl font-black text-gray-900 mt-1">₦{stats.weekEarnings.toLocaleString()}</p>
                  </div>
               </div>
            </div>
@@ -55,12 +63,11 @@ export default function RunnerDashboard() {
                     <h3 className="text-3xl font-black tracking-tight mb-2">New Orders</h3>
                     <p className="text-white/80 font-medium">Available for pickup now</p>
                  </div>
-                 
               </div>
 
               <div className="flex items-end justify-between">
                  <div>
-                    <span className="text-7xl font-black tracking-tighter leading-none">{availableOrders}</span>
+                    <span className="text-7xl font-black tracking-tighter leading-none">{stats.availableCount}</span>
                     <span className="text-white/60 font-bold ml-3 uppercase tracking-widest text-xs">Waiting</span>
                  </div>
                  <Button 
@@ -75,22 +82,18 @@ export default function RunnerDashboard() {
            </div>
         </section>
 
-        {/* Performance Metrics */}
+        {/* Performance Metrics (Static for now but using real total earnings and rating) */}
         <section className="space-y-4">
            <h2 className="text-xl font-bold text-gray-900 tracking-tight">Performance</h2>
            <div className="bg-white border border-gray-100 rounded-[32px] p-2 shadow-sm">
-              <div className="grid grid-cols-3 divide-x divide-gray-100">
+              <div className="grid grid-cols-2 divide-x divide-gray-100">
                  <div className="py-6 text-center">
-                    <p className="text-3xl font-black text-gray-900 tracking-tighter">4.9</p>
+                    <p className="text-3xl font-black text-gray-900 tracking-tighter">{stats.rating > 0 ? stats.rating.toFixed(1) : "N/A"}</p>
                     <p className="text-[10px] uppercase font-bold text-gray-400 mt-2 tracking-widest">Rating</p>
                  </div>
                  <div className="py-6 text-center">
-                    <p className="text-3xl font-black text-gray-900 tracking-tighter">98%</p>
-                    <p className="text-[10px] uppercase font-bold text-gray-400 mt-2 tracking-widest">On Time</p>
-                 </div>
-                 <div className="py-6 text-center">
-                    <p className="text-3xl font-black text-gray-900 tracking-tighter">124</p>
-                    <p className="text-[10px] uppercase font-bold text-gray-400 mt-2 tracking-widest">Total</p>
+                    <p className="text-xl font-black text-gray-900 tracking-tighter truncate px-1">₦{stats.totalEarnings.toLocaleString()}</p>
+                    <p className="text-[10px] uppercase font-bold text-gray-400 mt-2 tracking-widest">Total Earned</p>
                  </div>
               </div>
            </div>
