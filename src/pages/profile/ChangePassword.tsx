@@ -4,24 +4,34 @@ import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { useUser } from "@clerk/clerk-react";
 
 export default function ChangePassword() {
   const navigate = useNavigate();
+  const { user, isLoaded } = useUser();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isLoaded || !user) return;
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await user.updatePassword({
+        currentPassword,
+        newPassword,
+      });
       toast.success("Password updated");
-      setIsLoading(false);
       navigate("/profile");
-    }, 800);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.errors?.[0]?.message || "Failed to update password");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

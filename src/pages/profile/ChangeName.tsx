@@ -4,29 +4,44 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { useUser } from "@clerk/clerk-react";
 
 interface ChangeNameProps {
-  onConfirm: (newName: string) => void;
+  onConfirm?: (newName: string) => void;
 }
 
 export default function ChangeName({ onConfirm }: ChangeNameProps) {
   const navigate = useNavigate();
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const { user, isLoaded } = useUser();
+  const [firstName, setFirstName] = useState(user?.firstName || "");
+  const [lastName, setLastName] = useState(user?.lastName || "");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Update state when user loads
+  if (isLoaded && !firstName && !lastName && (user?.firstName || user?.lastName)) {
+      setFirstName(user.firstName || "");
+      setLastName(user.lastName || "");
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isLoaded || !user) return;
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      const fullName = `${firstName} ${lastName}`.trim();
-      onConfirm(fullName);
+    try {
+      await user.update({
+        firstName,
+        lastName,
+      });
       toast.success("Name updated");
-      setIsLoading(false);
+      if (onConfirm) onConfirm(`${firstName} ${lastName}`);
       navigate("/profile");
-    }, 800);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.errors?.[0]?.message || "Failed to update name");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

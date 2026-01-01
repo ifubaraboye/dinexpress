@@ -1,30 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 
 interface ChangeAddressProps {
-  onConfirm: (newAddress: string) => void;
+  onConfirm?: (newAddress: string) => void;
 }
 
 export default function ChangeAddress({ onConfirm }: ChangeAddressProps) {
   const navigate = useNavigate();
+  const user = useQuery(api.users.current);
+  const updateAddress = useMutation(api.users.updateAddress);
+  
   const [address, setAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user?.address) {
+      setAddress(user.address);
+    }
+  }, [user]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      onConfirm(address);
+    try {
+      await updateAddress({ address });
       toast.success("Address updated");
-      setIsLoading(false);
+      if (onConfirm) onConfirm(address);
       navigate("/profile");
-    }, 800);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update address");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
