@@ -1,4 +1,4 @@
-import { QueryCtx, MutationCtx } from "./_generated/server";
+import type { QueryCtx, MutationCtx } from "./_generated/server";
 
 export async function UserId(
   ctx: QueryCtx | MutationCtx
