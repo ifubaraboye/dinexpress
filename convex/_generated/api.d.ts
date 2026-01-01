@@ -10,7 +10,10 @@
 
 import type * as auth from "../auth.js";
 import type * as helpers_getUserId from "../helpers/getUserId.js";
+import type * as http from "../http.js";
 import type * as main from "../main.js";
+import type * as orders from "../orders.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -21,7 +24,10 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   "helpers/getUserId": typeof helpers_getUserId;
+  http: typeof http;
   main: typeof main;
+  orders: typeof orders;
+  users: typeof users;
 }>;
 
 /**
