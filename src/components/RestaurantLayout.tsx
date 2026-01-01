@@ -50,12 +50,13 @@ export function RestaurantLayout({
   const cafeteriaIdFromState = location.state?.cafeteriaId;
   const finalId = initialId || cafeteriaIdFromState;
 
-  // Query cafeteria by name if ID is missing (robustness for refreshes)
-  const cafeteria = useQuery(api.main.getCafeteriaByName, 
-    !finalId ? { name } : "skip" as any
+  // Query cafeteria by ID or Name to get full details (rating, fees, etc)
+  const cafeteria = useQuery(
+    finalId ? api.main.getCafeteriaById : api.main.getCafeteriaByName,
+    finalId ? { id: finalId as Id<"cafeterias"> } : { name }
   );
 
-  const cafeteriaId = finalId || cafeteria?._id;
+  const cafeteriaId = cafeteria?._id || finalId;
 
   // Use Convex query for menu items
   const menuData = useQuery(api.main.getMenuItemsWithDetails, 
@@ -122,6 +123,8 @@ export function RestaurantLayout({
         waitTime: `${m.avgWaitTimeMinutes} mins`,
         image: getValidImage(m.imageUrl),
         quantity_available: m.quantityAvailable,
+        restaurantDeliveryFee: m.restaurantDeliveryFee,
+        restaurantTransferCharge: m.restaurantTransferCharge,
       };
       if (!groups.has(title)) groups.set(title, []);
       groups.get(title)!.push(item);
@@ -137,7 +140,7 @@ export function RestaurantLayout({
   }, [menuData, searchQuery]);
 
   return (
-    <RestaurantProvider value={{ name, deliveryFee }}>
+    <RestaurantProvider value={{ name: cafeteria?.name ?? name, deliveryFee: cafeteria?.deliveryFee ?? deliveryFee }}>
       <div className="bg-white min-h-screen w-full overflow-x-hidden">
         
         {/* Navigation Bar (Floating/Sticky) */}
@@ -161,8 +164,8 @@ export function RestaurantLayout({
               <div className="flex flex-wrap items-center gap-4 md:gap-6 pb-6 text-white/90 font-medium text-sm md:text-base">
                  <div className="flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
                    <Star size={16} className="text-yellow-400 fill-yellow-400" />
-                   <span className="font-bold">{rating}</span>
-                   <span className="opacity-70">({reviews}+)</span>
+                   <span className="font-bold">{cafeteria?.avgRating ? cafeteria.avgRating.toFixed(1) : rating}</span>
+                   <span className="opacity-70">({cafeteria?.totalRatings ?? reviews}+)</span>
                  </div>
                  <div className="flex items-center gap-2">
                    <Clock size={18} />
@@ -170,7 +173,7 @@ export function RestaurantLayout({
                  </div>
                  <div className="flex items-center gap-2">
                    <MapPin size={18} />
-                   <span>₦{deliveryFee} delivery</span>
+                   <span>₦{cafeteria?.deliveryFee ?? deliveryFee} Delivery</span>
                  </div>
               </div>
             </div>

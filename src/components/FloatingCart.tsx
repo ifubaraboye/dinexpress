@@ -50,7 +50,9 @@ export function FloatingCart() {
         name: it.name,
         price: it.price,
         quantity: it.quantity,
-        restaurantName: it.restaurantName
+        restaurantName: it.restaurantName,
+        restaurantTransferCharge: it.restaurantTransferCharge,
+        restaurantFee: it.restaurantFee
       }))
     };
     localStorage.setItem("checkout_payload", JSON.stringify(checkoutPayload));

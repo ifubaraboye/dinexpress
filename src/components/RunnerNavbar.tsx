@@ -7,10 +7,8 @@ import {
   Package, 
   History, 
   User, 
-  ChevronDown, 
   LogOut, 
-  Settings,
-  ShieldCheck
+  LogIn
 } from "lucide-react";
 import {
   Drawer,
@@ -29,6 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
+import { useUser, useClerk } from "@clerk/clerk-react";
 
 export default function RunnerNavbar() {
   const [open, setOpen] = useState(false);
@@ -37,10 +36,8 @@ export default function RunnerNavbar() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const user = {
-    name: "Runner",
-    avatar: "/profilephoto.svg"
-  };
+  const { isSignedIn, user, isLoaded } = useUser();
+  const { signOut } = useClerk();
 
   const links = [
     { to: "/runner", label: "Home", icon: Home },
@@ -61,6 +58,11 @@ export default function RunnerNavbar() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <header 
@@ -110,31 +112,45 @@ export default function RunnerNavbar() {
                   </div>
 
                   <div className="mt-auto p-4 border-t border-gray-50 flex-shrink-0">
-                    <div className="px-4 mb-4 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 shadow-sm">
-                        <img src={user.avatar} alt="Runner" className="w-full h-full object-cover" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-900 leading-none">Runner</p>
-                        <p className="text-[10px] font-medium text-gray-400 mt-1">Dispatch Account</p>
-                      </div>
-                    </div>
-                    <Link
-                      to="/runner/profile"
-                      onClick={() => setOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                        location.pathname === "/runner/profile" ? "bg-red-50 text-red-600 font-bold" : "text-gray-600 hover:bg-gray-50"
-                      }`}
-                    >
-                      <User className="h-5 w-5" />
-                      Manage Profile
-                    </Link>
-                    <button
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-colors mt-1"
-                    >
-                      <LogOut className="h-5 w-5" />
-                      <span className="font-medium text-sm">Sign Out</span>
-                    </button>
+                     {isSignedIn ? (
+                      <>
+                        <div className="px-4 mb-4 flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 shadow-sm">
+                            <img src={user.imageUrl} alt={user.fullName || "Runner"} className="w-full h-full object-cover" />
+                          </div>
+                          <div className="overflow-hidden">
+                            <p className="text-sm font-bold text-gray-900 leading-none truncate">{user.fullName || "Runner"}</p>
+                            <p className="text-[10px] font-medium text-gray-400 mt-1 truncate">Dispatch Account</p>
+                          </div>
+                        </div>
+                        <Link
+                          to="/runner/profile"
+                          onClick={() => setOpen(false)}
+                          className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+                            location.pathname === "/runner/profile" ? "bg-red-50 text-red-600 font-bold" : "text-gray-600 hover:bg-gray-50"
+                          }`}
+                        >
+                          <User className="h-5 w-5" />
+                          Manage Profile
+                        </Link>
+                        <button
+                          onClick={handleSignOut}
+                          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-colors mt-1"
+                        >
+                          <LogOut className="h-5 w-5" />
+                          <span className="font-medium text-sm">Sign Out</span>
+                        </button>
+                      </>
+                     ) : (
+                        <Link
+                        to="/login"
+                        onClick={() => setOpen(false)}
+                        className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition-colors"
+                      >
+                        <LogIn size={18} />
+                        Sign In
+                      </Link>
+                     )}
                   </div>
                 </DrawerContent>
               </Drawer>
@@ -150,7 +166,7 @@ export default function RunnerNavbar() {
           </div>
 
           {/* Desktop Links */}
-          <div className="hidden lg:flex items-center gap-8">
+          <div className="hidden lg:flex items-center gap-2">
              <div className="flex items-center gap-6 mr-4">
                 {links.map((link) => (
                   <Link 
@@ -166,27 +182,45 @@ export default function RunnerNavbar() {
              </div>
 
              {/* Profile Dropdown */}
-             <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 p-1 pr-3 rounded-full bg-gray-50 hover:bg-gray-100 transition-all cursor-pointer border border-transparent hover:border-gray-200 group">
-                    <div className="w-10 h-10 rounded-full overflow-hidden border border-white shadow-sm">
-                       <img src={user.avatar} alt="Runner" className="w-full h-full object-cover" />
-                    </div>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 mt-2">
-                  <DropdownMenuLabel className="font-bold text-xs uppercase tracking-widest text-gray-400 py-3">ACCOUNT</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => navigate("/runner/profile")} className="cursor-pointer gap-3 py-3">
-                    <User size={18} className="text-gray-400" />
-                    <span>Runner Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="cursor-pointer gap-3 py-3 text-red-600 focus:text-red-600 focus:bg-red-50">
-                    <LogOut size={18} />
-                    <span>Sign Out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-             </DropdownMenu>
+             {isLoaded && (
+               isSignedIn ? (
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex items-center gap-2 p-1 pr-3 rounded-full bg-gray-50 hover:bg-gray-100 transition-all cursor-pointer border border-transparent hover:border-gray-200 group">
+                        <div className="w-10 h-10 rounded-full overflow-hidden border border-white shadow-sm">
+                           <img src={user.imageUrl} alt={user.fullName || "Runner"} className="w-full h-full object-cover" />
+                        </div>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56 mt-2">
+                      <DropdownMenuLabel className="font-bold text-xs uppercase tracking-widest text-gray-400 py-3">
+                        {user.fullName || "Account"}
+                      </DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => navigate("/runner/profile")} className="cursor-pointer gap-3 py-3">
+                        <User size={18} className="text-gray-400" />
+                        <span>My Profile</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate("/runner/orders")} className="cursor-pointer gap-3 py-3">
+                        <Package size={18} className="text-gray-400" />
+                        <span>Orders</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate("/runner/history")} className="cursor-pointer gap-3 py-3">
+                        <History size={18} className="text-gray-400" />
+                        <span>History</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer gap-3 py-3 text-red-600 focus:text-red-600 focus:bg-red-50">
+                        <LogOut size={18} />
+                        <span>Sign Out</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                 </DropdownMenu>
+               ) : (
+                 <Button asChild className="bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg shadow-red-100">
+                    <Link to="/login">Sign In</Link>
+                 </Button>
+               )
+             )}
           </div>
 
         </div>

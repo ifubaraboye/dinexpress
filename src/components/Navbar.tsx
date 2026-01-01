@@ -10,9 +10,8 @@ import {
   Utensils, 
   ChevronDown, 
   LogOut, 
-  Settings, 
   ShoppingBag,
-  Heart
+  LogIn
 } from "lucide-react";
 import {
   Drawer,
@@ -35,6 +34,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
+import { useUser, useClerk } from "@clerk/clerk-react";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -43,12 +45,13 @@ export default function Navbar() {
   const [lastScrollY, setLastScrollY] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
+  
+  const { isSignedIn, user, isLoaded } = useUser();
+  const { signOut } = useClerk();
 
-  const user = {
-    name: "Oribi",
-    email: "oribi@example.com",
-    avatar: "/profilephoto.svg"
-  };
+  // Fetch Convex user profile to check role
+  const convexUser = useQuery(api.users.current);
+  const isAdmin = convexUser?.role === "admin";
 
   const mainLinks = [
     { to: "/", label: "Home", icon: Home },
@@ -77,6 +80,11 @@ export default function Navbar() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <header 
@@ -162,31 +170,45 @@ export default function Navbar() {
                   </div>
 
                   <div className="mt-auto p-4 border-t border-gray-50 flex-shrink-0">
-                    <div className="px-4 mb-4 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 shadow-sm">
-                        <img src={user.avatar} alt="User" className="w-full h-full object-cover" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-900 leading-none">{user.name}</p>
-                        <p className="text-[10px] font-medium text-gray-400 mt-1">{user.email}</p>
-                      </div>
-                    </div>
-                    <Link
-                      to="/profile"
-                      onClick={() => setOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                        location.pathname === "/profile" ? "bg-red-50 text-red-600 font-bold" : "text-gray-600 hover:bg-gray-50"
-                      }`}
-                    >
-                      <User className="h-5 w-5" />
-                      Manage Profile
-                    </Link>
-                    <button
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-colors mt-1"
-                    >
-                      <LogOut className="h-5 w-5" />
-                      <span className="font-medium text-sm">Sign Out</span>
-                    </button>
+                    {isSignedIn ? (
+                      <>
+                        <div className="px-4 mb-4 flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 shadow-sm">
+                            <img src={user.imageUrl} alt={user.fullName || "User"} className="w-full h-full object-cover" />
+                          </div>
+                          <div className="overflow-hidden">
+                            <p className="text-sm font-bold text-gray-900 leading-none truncate">{user.fullName}</p>
+                            <p className="text-[10px] font-medium text-gray-400 mt-1 truncate">{user.primaryEmailAddress?.emailAddress}</p>
+                          </div>
+                        </div>
+                        <Link
+                          to="/profile"
+                          onClick={() => setOpen(false)}
+                          className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+                            location.pathname === "/profile" ? "bg-red-50 text-red-600 font-bold" : "text-gray-600 hover:bg-gray-50"
+                          }`}
+                        >
+                          <User className="h-5 w-5" />
+                          Manage Profile
+                        </Link>
+                        <button
+                          onClick={handleSignOut}
+                          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-colors mt-1"
+                        >
+                          <LogOut className="h-5 w-5" />
+                          <span className="font-medium text-sm">Sign Out</span>
+                        </button>
+                      </>
+                    ) : (
+                      <Link
+                        to="/login"
+                        onClick={() => setOpen(false)}
+                        className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition-colors"
+                      >
+                        <LogIn size={18} />
+                        Sign In
+                      </Link>
+                    )}
                   </div>
                 </DrawerContent>
               </Drawer>
@@ -202,7 +224,7 @@ export default function Navbar() {
           </div>
 
           {/* Desktop Links */}
-          <div className="hidden lg:flex items-center gap-8">
+          <div className="hidden lg:flex items-center gap-2">
              <div className="flex items-center gap-6 mr-4">
                 {mainLinks.map((link) => (
                   <Link 
@@ -218,60 +240,70 @@ export default function Navbar() {
              </div>
 
              {/* Profile Dropdown */}
-             <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2  rounded-full bg-gray-50 hover:bg-gray-100 transition-all cursor-pointer border border-transparent hover:border-gray-200 group">
-                    <div className="w-10 h-10 rounded-full overflow-hidden border border-white shadow-sm">
-                       <img src={user.avatar} alt="User" className="w-full h-full object-cover" />
-                    </div>
-                    {/* <span className="text-sm font-bold text-gray-700 group-hover:text-gray-900">{user.name}</span> */}
-                    {/* <ChevronDown size={14} className="text-gray-400 group-hover:text-gray-600 transition-transform duration-200" /> */}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 mt-2">
-                  <DropdownMenuLabel className="font-bold text-xs uppercase tracking-widest text-gray-400 py-3">Account</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer gap-3 py-3">
-                    <User size={18} className="text-gray-400" />
-                    <span>My Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/reorder")} className="cursor-pointer gap-3 py-3">
-                    <ShoppingBag size={18} className="text-gray-400" />
-                    <span>Orders</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/dashboard")} className="cursor-pointer gap-3 py-3">
-                    <ShoppingBag size={18} className="text-gray-400" />
-                    <span>Dashboard</span>
-                  </DropdownMenuItem>
+             {isLoaded && (
+               isSignedIn ? (
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex items-center gap-2 rounded-full bg-gray-50 hover:bg-gray-100 transition-all cursor-pointer border border-transparent hover:border-gray-200 group">
+                        <div className="w-10 h-10 rounded-full overflow-hidden border border-white shadow-sm">
+                           <img src={user.imageUrl} alt={user.fullName || "User"} className="w-full h-full object-cover" />
+                        </div>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56 mt-2">
+                      <DropdownMenuLabel className="font-bold text-xs uppercase tracking-widest text-gray-400 py-3">
+                        {user.fullName || "Account"}
+                      </DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer gap-3 py-3">
+                        <User size={18} className="text-gray-400" />
+                        <span>My Profile</span>
+                      </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => navigate("/reorder")} className="cursor-pointer gap-3 py-3">
+                                          <ShoppingBag size={18} className="text-gray-400" />
+                                          <span>Orders</span>
+                                        </DropdownMenuItem>
+                                        
+                                        {isAdmin && (
+                                          <DropdownMenuItem onClick={() => navigate("/dashboard")} className="cursor-pointer gap-3 py-3">
+                                            <ShoppingBag size={18} className="text-gray-400" />
+                                            <span>Dashboard</span>
+                                          </DropdownMenuItem>
+                                        )}
+                      
+                                        <DropdownMenuSeparator />
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="cursor-pointer gap-3 py-3">
+                          <Utensils size={18} className="text-gray-400" />
+                          <span>Restaurants</span>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuPortal>
+                          <DropdownMenuSubContent className="w-48 rounded-xl ml-1">
+                            {restaurants.map((rest) => (
+                              <DropdownMenuItem 
+                                key={rest.to} 
+                                onClick={() => navigate(rest.to)}
+                                className="cursor-pointer py-2.5"
+                              >
+                                {rest.label}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuSubContent>
+                        </DropdownMenuPortal>
+                      </DropdownMenuSub>
 
-                  <DropdownMenuSeparator />
-
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger className="cursor-pointer gap-3 py-3">
-                      <Utensils size={18} className="text-gray-400" />
-                      <span>Restaurants</span>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuPortal>
-                      <DropdownMenuSubContent className="w-48 rounded-xl ml-1">
-                        {restaurants.map((rest) => (
-                          <DropdownMenuItem 
-                            key={rest.to} 
-                            onClick={() => navigate(rest.to)}
-                            className="cursor-pointer py-2.5"
-                          >
-                            {rest.label}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuSubContent>
-                    </DropdownMenuPortal>
-                  </DropdownMenuSub>
-
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="cursor-pointer gap-3 py-3 text-red-600 focus:text-red-600 focus:bg-red-50">
-                    <LogOut size={18} />
-                    <span>Sign Out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-             </DropdownMenu>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer gap-3 py-3 text-red-600 focus:text-red-600 focus:bg-red-50">
+                        <LogOut size={18} />
+                        <span>Sign Out</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                 </DropdownMenu>
+               ) : (
+                 <Button asChild className="bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg shadow-red-100">
+                    <Link to="/login">Sign In</Link>
+                 </Button>
+               )
+             )}
           </div>
 
         </div>

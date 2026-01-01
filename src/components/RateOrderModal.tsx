@@ -1,282 +1,122 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Link } from "react-router-dom"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import { Star, Loader2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import RateOrderModal from "./RateOrderModal"
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
+import { cn } from "@/lib/utils";
 
-/* =========================
-   Local Types (NO API)
-   ========================= */
-
-interface LocalOrder {
-  id: string | number
-  total: number
-  created_at: string
-  recipient_name: string
-  account_number?: string | null
-  runner_id?: string | number | null
-  order_items?: Array<{
-    id: number
-    quantity: number
-    menu_item_id?: number
-    menu_items?: {
-      id?: number
-    }
-  }>
+interface RateOrderModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  orderId: string;
 }
 
-/* =========================
-   Order Success Modal
-   ========================= */
-
-export default function OrderSuccessModal({
+export default function RateOrderModal({
   isOpen,
   onClose,
-  order,
-  onOpenComplaintModal,
-}: {
-  isOpen: boolean
-  onClose: () => void
-  order: LocalOrder | null
-  onOpenComplaintModal: () => void
-}) {
-  if (!order) return null
+  orderId,
+}: RateOrderModalProps) {
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const [showRatingModal, setShowRatingModal] = useState(false)
-  const [hasRated, setHasRated] = useState(false)
-  const [checkingRating, setCheckingRating] = useState(true)
+  const rateRunner = useMutation(api.orders.rateRunner);
 
-  /* =========================
-     Check rating status
-     ========================= */
-
-  useEffect(() => {
-    const checkIfRated = async () => {
-      if (!order?.id) {
-        setCheckingRating(false)
-        return
-      }
-
-      const token =
-        typeof window !== "undefined" ? localStorage.getItem("token") : null
-
-      if (!token) {
-        setCheckingRating(false)
-        return
-      }
-
-      try {
-        const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000"
-
-
-        if (order.order_items && order.order_items.length > 0) {
-          const firstOrderItem = order.order_items[0]
-          const menuItemId = firstOrderItem.menu_item_id
-
-          if (!menuItemId) return
-
-          const res = await fetch(`${API_BASE_URL}/ratings`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              menu_item_id: menuItemId,
-              rating: 5,
-              comment: "test",
-            }),
-          })
-
-          if (res.status === 409) {
-            setHasRated(true)
-          } else if (res.ok) {
-            setHasRated(false)
-          }
-        }
-      } catch (err) {
-        console.error("Error checking rating status:", err)
-      } finally {
-        setCheckingRating(false)
-      }
+  const handleSubmit = async () => {
+    if (rating === 0) {
+      toast.error("Please select a rating");
+      return;
     }
 
-    if (isOpen) checkIfRated()
-  }, [order, isOpen])
-
-  /* =========================
-     Helpers
-     ========================= */
-
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString)
-    return (
-      date.toLocaleDateString("en-GB", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      }) +
-      " | " +
-      date.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: false,
-      })
-    )
-  }
-
-  const handleRatingComplete = () => {
-    setShowRatingModal(false)
-    setHasRated(true)
-    onClose()
-  }
-
-  /* =========================
-     Render
-     ========================= */
+    setSubmitting(true);
+    try {
+      await rateRunner({
+        orderId: orderId as Id<"orders">,
+        rating,
+        comment: comment || undefined,
+      });
+      toast.success("Thank you for your feedback!");
+      onClose();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to submit rating");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-    <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-sm w-full rounded-2xl shadow-md">
-          <DialogHeader>
-            <DialogTitle className="sr-only">
-              Order Delivered
-            </DialogTitle>
-          </DialogHeader>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-sm w-full rounded-[32px] p-8 border-none outline-none shadow-2xl">
+        <DialogHeader className="relative">
+          <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight text-center">
+            Rate Your Runner
+          </DialogTitle>
+          <p className="text-center text-sm text-gray-500 font-medium mt-2">
+            How was your delivery experience?
+          </p>
+        </DialogHeader>
 
-          <div className="p-6 text-center">
-            <div className="flex justify-center mb-4">
-              <img
-                src="/mnt/data/15694026-d827-4479-bf66-970251e58cc6.png"
-                alt="Preview"
-                width={120}
-                height={240}
-                className="rounded-md object-cover"
-              />
-            </div>
-
-            <div className="text-lg font-semibold mb-1">Thank you!</div>
-            <p className="text-sm text-gray-600 mb-4">
-              Your order has been delivered successfully.
-            </p>
-
-            <hr className="border-dashed border-gray-300 my-4" />
-
-            <div className="flex flex-col gap-y-4 text-sm text-gray-700 mb-3">
-              <div>
-                <p className="font-medium">TICKET ID</p>
-                <p>{order.id}</p>
-              </div>
-
-              <div>
-                <p className="font-medium">Amount</p>
-                <p className="font-semibold">
-                  ₦{order.total.toLocaleString()}
-                </p>
-              </div>
-            </div>
-
-            <div className="text-sm text-gray-700 mb-5">
-              <p className="font-medium">DATE & TIME</p>
-              <p>{formatDateTime(order.created_at)}</p>
-            </div>
-
-            <div className="bg-gray-100 rounded-xl p-3 flex items-center gap-3 mb-5">
-              <img
-                src="/mastercard.png"
-                alt="Mastercard"
-                width={36}
-                height={36}
-              />
-              <div className="text-left">
-                <p className="font-medium text-gray-800">
-                  {order.recipient_name}
-                </p>
-                {order.account_number && (
-                  <p className="text-sm text-gray-600">
-                    ****{order.account_number.slice(-4)}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <hr className="border-dashed border-gray-300 my-4" />
-
-            <p className="text-sm text-gray-600 mb-4">
-              Problem with your order?{" "}
+        <div className="space-y-8 mt-4">
+          {/* Star Rating */}
+          <div className="flex justify-center gap-3">
+            {[1, 2, 3, 4, 5].map((star) => (
               <button
-                onClick={onOpenComplaintModal}
-                className="text-red-600 font-medium"
+                key={star}
+                onClick={() => setRating(star)}
+                className="transition-transform active:scale-90 hover:scale-110 cursor-pointer"
               >
-                Report Issue
+                <Star
+                  size={40}
+                  className={cn(
+                    "transition-colors duration-300",
+                    star <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-100"
+                  )}
+                />
               </button>
-            </p>
-
-            <div className="flex flex-col gap-3">
-              {checkingRating ? (
-                <Button
-                  className="bg-gray-400 text-white w-full"
-                  disabled
-                >
-                  Checking...
-                </Button>
-              ) : hasRated ? (
-                <div className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-center justify-center gap-2">
-                  <svg
-                    className="w-5 h-5 text-green-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span className="text-sm font-medium text-green-700">
-                    You've already rated this order
-                  </span>
-                </div>
-              ) : (
-                <Button
-                  className="bg-red-600 hover:bg-red-700 text-white w-full"
-                  onClick={() => setShowRatingModal(true)}
-                >
-                  Rate Order
-                </Button>
-              )}
-
-              <Link to="/">
-                <Button
-                  variant="outline"
-                  className="border-red-600 text-red-600 hover:bg-red-50 w-full"
-                  onClick={onClose}
-                >
-                  Home Page
-                </Button>
-              </Link>
-            </div>
+            ))}
           </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* Rating Modal */}
-      {/* <RateOrderModal
-        isOpen={showRatingModal}
-        onClose={handleRatingComplete}
-        order={order}
-      /> */}
-    </>
-  )
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">
+              Add a comment (Optional)
+            </label>
+            <Textarea
+              placeholder="What could be improved?"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              className="min-h-[100px] rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:border-red-100 transition-all text-sm font-medium resize-none shadow-none"
+            />
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <Button
+              onClick={handleSubmit}
+              disabled={submitting || rating === 0}
+              className="h-14 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-base shadow-xl shadow-red-100 transition-all active:scale-95 border-none cursor-pointer"
+            >
+              {submitting ? <Loader2 className="animate-spin" size={24} /> : "Submit Review"}
+            </Button>
+            <button
+              onClick={onClose}
+              className="py-2 text-xs font-black text-gray-400 hover:text-gray-900 transition-colors uppercase tracking-[0.2em] cursor-pointer"
+            >
+              Skip for now
+            </button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }

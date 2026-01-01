@@ -1,230 +1,152 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { X } from "lucide-react";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000";
-
-type ChatMessage = {
-  id: string | number;
-  order_id: string;
-  sender_id: string;
-  message: string;
-  created_at: string;
-  read?: boolean;
-  sender?: { id: string; full_name?: string | null } | null;
-};
-
-type ChatPayload = {
-  messages: ChatMessage[];
-  order_status: string;
-  current_user_id: string;
-  peer: { id: string; full_name?: string | null } | null;
-};
+import { useEffect, useRef, useState } from "react";
+import { X, Send, Loader2 } from "lucide-react";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
+import { cn } from "@/lib/utils";
 
 export default function ChatPanel({
   orderId,
   open,
   onClose,
+  currentUserId,
 }: {
   orderId: string;
   open: boolean;
   onClose: () => void;
+  currentUserId: string; // This should be the Convex user ID
 }) {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const [me, setMe] = useState<string | null>(null);
-  const [peerName, setPeerName] = useState("Chat");
+  const [sending, setSubmitting] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  const scrollToBottom = () =>
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  const order = useQuery(api.orders.get, { orderId: orderId as Id<"orders"> });
+  const sendMessage = useMutation(api.orders.addChatMessage);
+  const markAsRead = useMutation(api.orders.markMessagesAsRead);
 
-  const getToken = () =>
-    typeof window !== "undefined"
-      ? localStorage.getItem("token")
-      : null;
-
-  /* ----------------------------------------
-     Fetch messages
-  ---------------------------------------- */
-  const fetchMessages = async () => {
-    try {
-      const token = getToken();
-      if (!token) return;
-
-      const res = await fetch(`${API_BASE_URL}/api/chats/${orderId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) throw new Error("Failed to load chat");
-
-      const data: ChatPayload = await res.json();
-
-      setMessages(data.messages || []);
-      setMe(data.current_user_id);
-      setPeerName(data.peer?.full_name || "Chat");
-      setError(null);
-    } catch (err: any) {
-      setError(err?.message || "Failed to load chat");
+  const messages = order?.chats || [];
+  
+  useEffect(() => {
+    if (open && messages.length > 0) {
+        markAsRead({ orderId: orderId as Id<"orders"> });
     }
-  };
+  }, [open, messages.length, orderId, markAsRead]);
 
-  /* ----------------------------------------
-     Initial load + polling
-  ---------------------------------------- */
-  useEffect(() => {
-    if (!open) return;
-
-    fetchMessages().then(() => {
-      const token = getToken();
-      if (!token) return;
-
-      fetch(`${API_BASE_URL}/api/chats/${orderId}/mark-read`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }).catch(() => {});
-    });
-
-    const interval = setInterval(fetchMessages, 3000);
-    return () => clearInterval(interval);
-  }, [open, orderId]);
+  // Determine peer name (the other person)
+  // If I am the customer, peer is runner. If I am the runner, peer is customer.
+  const isCustomer = order?.userId === currentUserId;
+  const peerName = isCustomer ? (order?.runner_info?.name || "Runner") : (order?.customer_name || "Customer");
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages.length]);
+    if (open) {
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages.length, open]);
 
-  const canSend = useMemo(
-    () => input.trim().length > 0 && !busy,
-    [input, busy]
-  );
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || sending) return;
 
-  /* ----------------------------------------
-     Send message
-  ---------------------------------------- */
-  const send = async () => {
-    if (!canSend) return;
-
-    setBusy(true);
+    setSubmitting(true);
     try {
-      const token = getToken();
-      if (!token) throw new Error("Not authenticated");
-
-      const res = await fetch(
-        `${API_BASE_URL}/api/chats/${orderId}/send`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ message: input.trim() }),
-        }
-      );
-
-      if (!res.ok) throw new Error("Failed to send message");
-
+      await sendMessage({
+        orderId: orderId as Id<"orders">,
+        message: input.trim(),
+      });
       setInput("");
-      await fetchMessages();
-
-      fetch(`${API_BASE_URL}/api/chats/${orderId}/mark-read`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }).catch(() => {});
-    } catch (err: any) {
-      setError(err?.message || "Failed to send message");
+    } catch (err) {
+      console.error(err);
     } finally {
-      setBusy(false);
+      setSubmitting(false);
     }
   };
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/30">
-      <div className="mx-auto w-full max-w-md rounded-t-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-[#ffe3d7]" />
-            <div className="leading-tight">
-              <div className="text-sm font-semibold">{peerName}</div>
-              <div className="text-xs text-gray-500">Active now</div>
+    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 backdrop-blur-sm px-4">
+      <div className="w-full max-w-lg bg-white rounded-t-[40px] shadow-2xl flex flex-col h-[85vh] animate-in slide-in-from-bottom-10 duration-500">
+        
+        {/* Chat Header */}
+        <div className="flex items-center justify-between px-8 py-6 border-b border-gray-50 flex-shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-red-600 font-black text-xl">
+              {peerName.charAt(0)}
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-gray-900 leading-none">{peerName}</h3>
+              <p className="text-xs font-bold text-green-500 mt-1 uppercase tracking-widest">Active Chat</p>
             </div>
           </div>
           <button
-            aria-label="Close chat"
             onClick={onClose}
-            className="p-2 text-gray-600 hover:text-gray-900"
+            className="p-3 bg-gray-50 hover:bg-gray-100 rounded-2xl transition-colors cursor-pointer"
           >
-            <X className="h-5 w-5" />
+            <X size={20} className="text-gray-400" />
           </button>
         </div>
 
-        <div className="max-h-[60vh] overflow-y-auto space-y-3 px-4 py-4">
-          {error && <div className="text-xs text-red-600">{error}</div>}
-
-          {messages.map((m) => {
-            const mine = m.sender_id === me;
-            return (
-              <div
-                key={m.id}
-                className={`flex ${
-                  mine ? "justify-end" : "justify-start"
-                }`}
-              >
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto p-8 space-y-6 no-scrollbar">
+          {messages.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center opacity-30 px-10">
+               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                  <Send size={32} />
+               </div>
+               <p className="font-bold">No messages yet. Start the conversation!</p>
+            </div>
+          ) : (
+            messages.map((m, idx) => {
+              const isMine = m.senderId === currentUserId;
+              return (
                 <div
-                  className={`max-w-[75%] rounded-xl px-3 py-2 text-sm ${
-                    mine
-                      ? "bg-[#ff6b6b] text-white"
-                      : "bg-gray-100 text-[#252525]"
-                  }`}
+                  key={idx}
+                  className={cn(
+                    "flex flex-col",
+                    isMine ? "items-end" : "items-start"
+                  )}
                 >
-                  <div>{m.message}</div>
                   <div
-                    className={`mt-1 text-[10px] ${
-                      mine
-                        ? "text-white/80"
-                        : "text-gray-500"
-                    }`}
-                  >
-                    {new Date(m.created_at).toLocaleTimeString(
-                      [],
-                      { hour: "numeric", minute: "2-digit" }
+                    className={cn(
+                      "max-w-[85%] px-5 py-4 rounded-[24px] text-sm font-medium leading-relaxed",
+                      isMine
+                        ? "bg-gray-900 text-white rounded-tr-none"
+                        : "bg-gray-100 text-gray-800 rounded-tl-none"
                     )}
+                  >
+                    {m.message}
                   </div>
+                  <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest mt-2 px-1">
+                    {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
                 </div>
-              </div>
-            );
-          })}
-
+              );
+            })
+          )}
           <div ref={bottomRef} />
         </div>
 
-        <div className="flex items-center gap-2 border-t p-3">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type a message"
-            className="h-11 flex-1 rounded-full border px-4 text-sm outline-none"
-          />
-          <button
-            onClick={send}
-            disabled={!canSend}
-            className="h-11 w-11 rounded-full bg-[#bf1f1b] text-white disabled:opacity-50"
-            aria-label="Send"
-          >
-            ▶
-          </button>
-        </div>
+        {/* Input Area */}
+        <form onSubmit={handleSend} className="p-6 pt-2 flex-shrink-0">
+          <div className="bg-gray-50 rounded-[32px] p-2 flex items-center gap-2 border border-gray-100 focus-within:border-red-200 transition-all">
+            <input
+              autoFocus
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Type your message..."
+              className="flex-1 bg-transparent px-4 py-2 text-sm font-bold outline-none placeholder:text-gray-400"
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || sending}
+              className="w-12 h-12 rounded-2xl bg-red-600 flex items-center justify-center text-white shadow-lg shadow-red-100 active:scale-90 transition-all disabled:opacity-50 disabled:grayscale cursor-pointer"
+            >
+              {sending ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

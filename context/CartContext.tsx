@@ -12,6 +12,7 @@ interface CartItem {
   image: string
   restaurantName?: string
   restaurantFee?: number
+  restaurantTransferCharge?: number
 }
 
 interface CartContextType {

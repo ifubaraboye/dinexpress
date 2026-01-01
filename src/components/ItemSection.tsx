@@ -12,6 +12,8 @@ export interface FoodItem {
   waitTime: string
   image: string
   quantity_available?: number
+  restaurantDeliveryFee?: number
+  restaurantTransferCharge?: number
 }
 
 interface FoodSectionProps {

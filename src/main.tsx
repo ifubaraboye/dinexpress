@@ -26,7 +26,13 @@ import RunnerHome from "./pages/Runner";
 import RunnerHistory from "./pages/RunnerHistory";
 import RunnerOrders from "./pages/Orders";
 import ActiveOrderDetails from "./pages/ActiveOrderDetails";
-import { ConvexProvider, ConvexReactClient } from "convex/react";
+import AuthCallback from "./pages/AuthCallback";
+import SSOCallbackPage from "./pages/SSOCallback";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { ConvexReactClient } from "convex/react";
+import { ClerkProvider, useAuth } from "@clerk/clerk-react";
+import { ConvexProviderWithClerk } from "convex/react-clerk";
+
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
@@ -36,66 +42,80 @@ const router = createBrowserRouter([
     element: <App />,
     errorElement: <NotFoundPage />,
     children: [
-      { index: true, element: <Home /> },
-      { path: "dunnkayce", element: <Dunnkayce /> },
-      { path: "grills", element: <Grills /> },
-      { path: "bto", element: <BTO /> },
-      { path: "the-laughters-kitchen", element: <Laughters /> },
-      { path: "search", element: <Search /> },
-      { path: "reorder", element: <Reorder /> },
-      { path: "track/:orderId", element: <TrackOrder /> },
-      { path: "checkout", element: <Checkout /> },
+      // 1. GLOBAL PUBLIC ROUTES (Accessible even by logged-in runners)
       { path: "login", element: <LoginPage /> },
+      { path: "sso-callback", element: <SSOCallbackPage /> },
+      { path: "auth-callback", element: <AuthCallback /> },
       { path: "forgot-password", element: <ForgotPassword /> },
       { path: "reset-password", element: <ResetPassword /> },
-      { path: "dashboard", element: <DashboardPage /> },
-      { path: "runner", children: [
-        { index: true, element: <RunnerHome /> },
-        { path: "history", element: <RunnerHistory /> },
-        { path: "orders", element: <RunnerOrders /> },
-        { path: "orders/:orderId", element: <ActiveOrderDetails /> }
-      ]},
-
-      // User Profile Routes
+      
+      // 2. PUBLIC STUDENT BROWSING (Guests allowed, but runners blocked/redirected)
       {
-        path: "profile",
+        element: <ProtectedRoute allowedRoles={["student", "admin"]} allowGuests />,
         children: [
-          { index: true, element: <Profile /> },
-          {
-            path: "change-address",
-            element: <ChangeAddress onConfirm={(newAddress) => console.log("New address:", newAddress)} />,
-          },
-          {
-            path: "change-email",
-            element: <ChangeEmail onConfirm={(newEmail) => console.log("New email:", newEmail)} />,
-          },
-          {
-            path: "change-username",
-            element: <ChangeName onConfirm={(newName) => console.log("New name:", newName)} />,
-          },
-          { path: "change-password", element: <ChangePassword /> },
-        ],
+            { index: true, element: <Home /> },
+            { path: "dunnkayce", element: <Dunnkayce /> },
+            { path: "grills", element: <Grills /> },
+            { path: "bto", element: <BTO /> },
+            { path: "the-laughters-kitchen", element: <Laughters /> },
+            { path: "search", element: <Search /> },
+        ]
       },
 
-      // Runner Profile Routes
+      // 3. RUNNER ROUTES (Protected)
       {
-        path: "runner/profile",
+        path: "runner",
+        element: <ProtectedRoute allowedRoles={["runner", "admin"]} />,
         children: [
-          { index: true, element: <Profile /> },
+          { index: true, element: <RunnerHome /> },
+          { path: "history", element: <RunnerHistory /> },
           {
-            path: "change-address",
-            element: <ChangeAddress onConfirm={(newAddress) => console.log("New address:", newAddress)} />,
+            path: "orders",
+            children: [
+              { index: true, element: <RunnerOrders /> },
+              { path: ":orderId", element: <ActiveOrderDetails /> },
+            ]
           },
           {
-            path: "change-email",
-            element: <ChangeEmail onConfirm={(newEmail) => console.log("New email:", newEmail)} />,
+            path: "profile",
+            children: [
+              { index: true, element: <Profile /> },
+              { path: "change-address", element: <ChangeAddress /> },
+              { path: "change-email", element: <ChangeEmail /> },
+              { path: "change-username", element: <ChangeName /> },
+              { path: "change-password", element: <ChangePassword /> },
+            ],
           },
+        ]
+      },
+
+      // 4. ADMIN ROUTES (Protected)
+      {
+        path: "dashboard",
+        element: <ProtectedRoute allowedRoles={["admin"]} />,
+        children: [
+          { index: true, element: <DashboardPage /> }
+        ]
+      },
+
+      // 5. STUDENT/CUSTOMER PROTECTED (Students + Admins, Guests redirected to login, Runners blocked)
+      {
+        element: <ProtectedRoute allowedRoles={["student", "admin"]} />,
+        children: [
+          { path: "reorder", element: <Reorder /> },
+          { path: "track/:orderId", element: <TrackOrder /> },
+          { path: "checkout", element: <Checkout /> },
           {
-            path: "change-username",
-            element: <ChangeName onConfirm={(newName) => console.log("New name:", newName)} />,
+            path: "profile",
+            children: [
+              { index: true, element: <Profile /> },
+              { path: "change-address", element: <ChangeAddress /> },
+              { path: "change-email", element: <ChangeEmail /> },
+              { path: "change-username", element: <ChangeName /> },
+              { path: "change-password", element: <ChangePassword /> },
+            ],
           },
-          { path: "change-password", element: <ChangePassword /> },
-        ],
+        ]
       },
     ],
   },
@@ -104,8 +124,10 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ConvexProvider client={convex} >
+  <ClerkProvider publishableKey="pk_test_cHJlc2VudC1sYWNld2luZy05NC5jbGVyay5hY2NvdW50cy5kZXYk">
+   <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
     <RouterProvider router={router} />
-    </ConvexProvider>
+    </ConvexProviderWithClerk>
+  </ClerkProvider>
   </StrictMode>
 );

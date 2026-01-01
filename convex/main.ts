@@ -1,6 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { getUserId } from "./helpers/getUserId";
+import { getOrCreateUserId } from "./helpers/getUserId";
 import type { Id } from "./_generated/dataModel";
 
 export const cafeterias = mutation({
@@ -8,18 +8,31 @@ export const cafeterias = mutation({
     const now = Date.now();
 
     const cafeterias = [
-      "Grills",
-      "BTO",
-      "Laughter's Kitchen",
-      "DunnKayce",
+      { name: "Grills", deliveryFee: 500, transferCharge: 50 },
+      { name: "BTO", deliveryFee: 500, transferCharge: 0 },
+      { name: "Laughter's Kitchen", deliveryFee: 500, transferCharge: 50 },
+      { name: "DunnKayce", deliveryFee: 500, transferCharge: 20 },
     ];
 
-    for (const name of cafeterias) {
-      await ctx.db.insert("cafeterias", {
-        name,
-        createdAt: now,
-        updatedAt: now,
-      });
+    for (const cafeteria of cafeterias) {
+      const existing = await ctx.db
+        .query("cafeterias")
+        .withIndex("by_name", (q) => q.eq("name", cafeteria.name))
+        .unique();
+
+      if (existing) {
+        await ctx.db.patch(existing._id, {
+          deliveryFee: cafeteria.deliveryFee,
+          transferCharge: cafeteria.transferCharge,
+          updatedAt: now,
+        });
+      } else {
+        await ctx.db.insert("cafeterias", {
+          ...cafeteria,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
     }
   },
 });
@@ -48,13 +61,13 @@ export const categories = mutation({
   },
 });
 
-export const addToCart = mutation({ //also called cart items(manages the cart items)
+export const addToCart = mutation({
   args: {
     menuItemId: v.id("menuItems"),
     quantity: v.number(),
   },
   handler: async (ctx, { menuItemId, quantity }) => {
-    const userId = await getUserId(ctx); // ✅ Convex Id<"users">
+    const userId = await getOrCreateUserId(ctx); // ✅ Auto-creates user if needed
     const now = Date.now();
 
     const existing = await ctx.db
@@ -80,16 +93,15 @@ export const addToCart = mutation({ //also called cart items(manages the cart it
   },
 });
 
-export const addChatMessage = mutation({ //responsible for adding chat messages to active orders
+export const addChatMessage = mutation({
   args: {
     orderId: v.id("orders"),
     message: v.string(),
   },
   handler: async (ctx, { orderId, message }) => {
-    const senderId = await getUserId(ctx);
+    const senderId = await getOrCreateUserId(ctx); // ✅ Auto-creates user if needed
     const now = Date.now();
 
-    // Get the existing chats array from the order
     const order = await ctx.db.get(orderId);
     if (!order) throw new Error("Order not found");
 
@@ -103,7 +115,6 @@ export const addChatMessage = mutation({ //responsible for adding chat messages 
       },
     ];
 
-    // Patch the order with the updated chats array
     await ctx.db.patch(orderId, {
       chats: newChats,
       updatedAt: now,
@@ -118,6 +129,8 @@ export const getMenuItemsWithDetails = query({
       .query("menuItems")
       .withIndex("by_cafeteria", q => q.eq("cafeteriaId", cafeteriaId))
       .collect();
+
+    const cafeteria = await ctx.db.get(cafeteriaId);
 
     return Promise.all(
       items.map(async item => {
@@ -137,6 +150,10 @@ export const getMenuItemsWithDetails = query({
           imageUrl: product?.imageUrl,
           categoryId: product?.categoryId,
           categoryName: category?.name,
+
+          restaurantName: cafeteria?.name,
+          restaurantDeliveryFee: cafeteria?.deliveryFee,
+          restaurantTransferCharge: cafeteria?.transferCharge,
         };
       })
     );
@@ -155,13 +172,22 @@ export const getAllCafeterias = query({
   },
 });
 
+export const getCafeteriaById = query({
+  args: { id: v.id("cafeterias") },
+  handler: async (ctx, { id }) => {
+    return await ctx.db.get(id);
+  },
+});
+
 export const getCafeteriaByName = query({
   args: { name: v.string() },
   handler: async (ctx, { name }) => {
-    return await ctx.db
+    const cafeteria = await ctx.db
       .query("cafeterias")
       .withIndex("by_name", (q) => q.eq("name", name))
       .unique();
+    
+    return cafeteria;
   },
 });
 
@@ -187,14 +213,16 @@ export const searchMenuItems = query({
         .collect();
 
       for (const item of menuItems) {
-        const cafeteria = await ctx.db.get("cafeterias", item.cafeteriaId);
-        const category = await ctx.db.get("categories", product.categoryId);
+        const cafeteria = await ctx.db.get(item.cafeteriaId);
+        const category = await ctx.db.get(product.categoryId);
 
         results.push({
           id: item._id,
           name: product.name,
           price: item.price,
           restaurant: cafeteria?.name || "Unknown",
+          restaurantDeliveryFee: cafeteria?.deliveryFee,
+          restaurantTransferCharge: cafeteria?.transferCharge,
           image: product.imageUrl,
           tag: category?.name || "Menu",
           avgRating: item.avgRating ?? 0,
@@ -236,6 +264,8 @@ export const getMenuItemsByCategory = query({
           name: product.name,
           price: item.price,
           restaurant: cafeteria?.name || "Unknown",
+          restaurantDeliveryFee: cafeteria?.deliveryFee,
+          restaurantTransferCharge: cafeteria?.transferCharge,
           image: product.imageUrl,
           tag: category.name,
           avgRating: item.avgRating ?? 0,
@@ -246,6 +276,25 @@ export const getMenuItemsByCategory = query({
     return results;
   },
 });
+
+export const updateCafeterias = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const cafeterias = await ctx.db.query("cafeterias").collect();
+    
+    for (const cafeteria of cafeterias) {
+      if (!cafeteria.deliveryFee || !cafeteria.transferCharge) {
+        await ctx.db.patch(cafeteria._id, {
+          deliveryFee: cafeteria.deliveryFee ?? 0,
+          transferCharge: cafeteria.transferCharge ?? 0,
+        });
+      }
+    }
+    
+    return `Updated ${cafeterias.length} cafeterias`;
+  },
+});
+
 
 
 

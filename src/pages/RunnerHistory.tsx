@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Copy, AlertCircle, CheckCircle2, Clock, MapPin } from "lucide-react";
+import { useState } from "react";
+import { Copy, CheckCircle2, Clock, MapPin, Loader2 } from "lucide-react";
 import ComplaintDrawer from "../components/ComplaintDrawer";
 import { cn } from "@/lib/utils";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 interface Order {
   id: string;
@@ -11,63 +13,20 @@ interface Order {
   delivery_address?: string;
   total: number;
   commission?: number;
-  status: "DELIVERED" | "PENDING" | string;
+  status: string;
   order_items?: { menu_items?: { cafeterias?: { name: string } }[] }[];
 }
 
-interface RunnerHistoryPageProps {
-  orders?: Order[];
-  runnerId?: string;
-}
-
-const MOCK_RUNNER_HISTORY: Order[] = [
-  {
-    id: "ord_active_99",
-    runner_id: "me",
-    delivery_address: "Hostel B, Room 204",
-    total: 4500,
-    commission: 450,
-    status: "PENDING",
-    order_items: [{ menu_items: [{ cafeterias: { name: "Dunnkayce" } }] }]
-  },
-  {
-    id: "ord_hist_001",
-    runner_id: "me",
-    delivery_address: "LTL, Floor 3",
-    total: 2800,
-    commission: 280,
-    status: "DELIVERED",
-    order_items: [{ menu_items: [{ cafeterias: { name: "Grills" } }] }]
-  },
-  {
-    id: "ord_hist_002",
-    runner_id: "me",
-    delivery_address: "Hostel A, Room 101",
-    total: 5500,
-    commission: 550,
-    status: "DELIVERED",
-    order_items: [{ menu_items: [{ cafeterias: { name: "The Laughters Kitchen" } }] }]
-  },
-  {
-    id: "ord_hist_003",
-    runner_id: "me",
-    delivery_address: "Main Gate, Security Post",
-    total: 1200,
-    commission: 120,
-    status: "DELIVERED",
-    order_items: [{ menu_items: [{ cafeterias: { name: "BTO" } }] }]
-  }
-];
-
-export default function RunnerHistory({ orders: initialOrders = MOCK_RUNNER_HISTORY, runnerId }: RunnerHistoryPageProps) {
-  const [orders] = useState<Order[]>(initialOrders);
+export default function RunnerHistory() {
   const [copied, setCopied] = useState<string | null>(null);
   const [complaintModalOpen, setComplaintModalOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
 
-  const mine = useMemo(() => (runnerId ? orders.filter((o) => o.runner_id === runnerId) : orders), [orders, runnerId]);
+  const history = useQuery(api.orders.listRunnerHistory);
+
+  const mine = history || [];
   const delivered = mine.filter((o) => o.status === "DELIVERED");
-  const pending = mine.filter((o) => o.status !== "DELIVERED");
+  const pending = mine.filter((o) => o.status !== "DELIVERED" && o.status !== "CANCELLED");
 
   const handleCopy = (ticketId: string) => {
     navigator.clipboard.writeText(ticketId);
@@ -80,11 +39,18 @@ export default function RunnerHistory({ orders: initialOrders = MOCK_RUNNER_HIST
     setComplaintModalOpen(true);
   };
 
+  if (history === undefined) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="animate-spin text-red-600" size={32} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#FAFAFA] pb-24 pt-20">
       <main className="max-w-2xl mx-auto px-6 space-y-10">
         
-        {/* Title Section (Minimal) */}
         <div>
           <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2">Order History</h1>
           <p className="text-sm text-gray-500 font-medium">Review your past deliveries and earnings.</p>
@@ -99,7 +65,7 @@ export default function RunnerHistory({ orders: initialOrders = MOCK_RUNNER_HIST
             </div>
             <div className="space-y-4">
               {pending.map(order => (
-                <OrderCard key={order.id} order={order} onCopy={handleCopy} onReport={handleReportIssue} copied={copied} />
+                <OrderCard key={order.id} order={order as any} onCopy={handleCopy} onReport={handleReportIssue} copied={copied} />
               ))}
             </div>
           </section>
@@ -120,7 +86,7 @@ export default function RunnerHistory({ orders: initialOrders = MOCK_RUNNER_HIST
           ) : (
             <div className="space-y-4">
               {delivered.map(order => (
-                <OrderCard key={order.id} order={order} onCopy={handleCopy} onReport={handleReportIssue} copied={copied} />
+                <OrderCard key={order.id} order={order as any} onCopy={handleCopy} onReport={handleReportIssue} copied={copied} />
               ))}
             </div>
           )}
@@ -145,18 +111,18 @@ function OrderCard({ order, onCopy, onReport, copied }: { order: Order; onCopy: 
       <div className="flex justify-between items-start mb-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-tight">ID: {order.id.slice(0, 8)}</span>
-            <button onClick={() => onCopy(order.id)} className="text-gray-300 hover:text-gray-900 transition-colors">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-tight">ID: {order.id.slice(-8)}</span>
+            <button onClick={() => onCopy(order.id)} className="text-gray-300 hover:text-gray-900 transition-colors cursor-pointer">
               <Copy size={14} className={copied === order.id ? "text-green-500" : ""} />
             </button>
           </div>
-          <h3 className="text-lg font-bold text-gray-900">{order.order_items?.[0]?.menu_items?.[0]?.cafeterias?.name || "Multiple Vendors"}</h3>
+          <h3 className="text-lg font-bold text-gray-900">{order.order_items?.[0]?.menu_items?.[0]?.cafeterias?.name || "DineXpress Order"}</h3>
         </div>
         <div className={cn(
           "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border",
           isDelivered ? "bg-green-50 text-green-600 border-green-100" : "bg-amber-50 text-amber-600 border-amber-100"
         )}>
-          {isDelivered ? "Delivered" : "In Progress"}
+          {isDelivered ? "Delivered" : order.status}
         </div>
       </div>
 
@@ -184,7 +150,7 @@ function OrderCard({ order, onCopy, onReport, copied }: { order: Order; onCopy: 
       </div>
 
       <div className="mt-6 pt-4 border-t border-gray-50 flex items-center justify-between">
-         <button onClick={() => onReport(order.id)} className="text-xs font-bold text-gray-400 hover:text-red-500 transition-colors">
+         <button onClick={() => onReport(order.id)} className="text-xs font-bold text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
            Report an issue
          </button>
          {isDelivered && (

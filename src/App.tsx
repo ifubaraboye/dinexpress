@@ -4,6 +4,7 @@ import RunnerNavbar from "./components/RunnerNavbar";
 import { CartProvider } from "../context/CartContext";
 import { Toaster } from "./components/ui/sonner";
 import { cn } from "@/lib/utils";
+import GlobalOrderNotification from "./components/GlobalOrderNotification";
 
 export default function App() {
   const location = useLocation();
@@ -12,8 +13,9 @@ export default function App() {
     location.pathname.startsWith("/login") || 
     location.pathname.startsWith("/forgot-password") || 
     location.pathname.startsWith("/reset-password") ||
-    location.pathname.startsWith("/checkout");
-  const isDashboardRoute = location.pathname.startsWith("/dashboard");
+    location.pathname.startsWith("/checkout") ||
+    location.pathname.startsWith("/auth-callback") ||
+    location.pathname.startsWith("/sso-callback");
 
   return (
     <CartProvider>
@@ -23,6 +25,7 @@ export default function App() {
           <Outlet /> {/* This is where child pages render */}
         </main>
         <Toaster />
+        <GlobalOrderNotification />
       </div>
     </CartProvider>
   );

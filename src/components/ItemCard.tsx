@@ -30,7 +30,8 @@ export function ItemCard({ item }: ItemCardProps) {
       price: item.price,
       image: item.image,
       restaurantName: restaurant.name,
-      restaurantFee: restaurant.deliveryFee,
+      restaurantFee: item.restaurantDeliveryFee ?? restaurant.deliveryFee,
+      restaurantTransferCharge: item.restaurantTransferCharge,
     })
   }
 
