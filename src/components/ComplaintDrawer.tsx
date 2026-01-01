@@ -23,7 +23,6 @@ export default function ComplaintDrawer({
   isOpen,
   onClose,
   orderId,
-  userRole = "customer",
 }: ComplaintDrawerProps) {
   const [report, setReport] = useState("");
   const [loading, setLoading] = useState(false);

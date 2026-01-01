@@ -8,7 +8,6 @@ import { RestaurantProvider } from "../../context/RestaurantContext";
 import { toast } from "sonner";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { cn } from "@/lib/utils";
 
 const CATEGORY_TILES = [
   { label: "rice", display: "Rice & Bowls", icon: Utensils, color: "bg-orange-50 text-orange-600", border: "border-orange-100" },

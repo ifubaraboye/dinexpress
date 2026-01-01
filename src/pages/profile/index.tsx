@@ -2,12 +2,9 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   User,
   Mail,
-  MapPin,
   Lock,
   ChevronRight,
   LogOut,
-  ShoppingBag,
-  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser, useClerk } from "@clerk/clerk-react";

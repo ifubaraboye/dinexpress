@@ -1,10 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import OrderSuccessModal from "./OrderSuccessModal";
-import ComplaintDrawer from "./ComplaintDrawer";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { MessageSquare } from "lucide-react";

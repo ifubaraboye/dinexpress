@@ -76,21 +76,25 @@ export const listAvailable = query({
 
       const itemsWithDetails = await Promise.all(orderItems.map(async (oi) => {
         const menuItem = await ctx.db.get(oi.menuItemId);
-        let productName = "Unknown Item";
         let cafeteriaName = "Unknown Cafeteria";
         
-        if (menuItem) {
-          const product = await ctx.db.get(menuItem.productId);
-          if (product) productName = product.name;
-          const cafeteria = await ctx.db.get(menuItem.cafeteriaId);
-          if (cafeteria) cafeteriaName = cafeteria.name;
-        }
+                        if (menuItem) {
+        
+                          await ctx.db.get(menuItem.productId);
+        
+                          
+        
+                          const cafeteria = await ctx.db.get(menuItem.cafeteriaId);
+        
+                  if (cafeteria) cafeteriaName = cafeteria.name;
+        
+                }
 
         return {
           id: oi._id,
           quantity: oi.quantity,
           menu_items: {
-            products: { name: productName },
+            products: { name: (await ctx.db.get(menuItem!.productId))?.name || "Unknown Item" },
             cafeterias: { name: cafeteriaName }
           }
         };
@@ -129,12 +133,13 @@ export const listMyActive = query({
 
       const itemsWithDetails = await Promise.all(orderItems.map(async (oi) => {
         const menuItem = await ctx.db.get(oi.menuItemId);
-        let productName = "Unknown Item";
         let cafeteriaName = "Unknown Cafeteria";
         
         if (menuItem) {
           const product = await ctx.db.get(menuItem.productId);
-          if (product) productName = product.name;
+          if (product) {
+              // productName = product.name; (Removed)
+          }
           const cafeteria = await ctx.db.get(menuItem.cafeteriaId);
           if (cafeteria) cafeteriaName = cafeteria.name;
         }
@@ -143,7 +148,7 @@ export const listMyActive = query({
           id: oi._id,
           quantity: oi.quantity,
           menu_items: {
-            products: { name: productName },
+            products: { name: (await ctx.db.get(menuItem!.productId))?.name || "Unknown Item" },
             cafeterias: { name: cafeteriaName }
           }
         };
@@ -235,12 +240,11 @@ export const listRunnerHistory = query({
 
       const itemsWithDetails = await Promise.all(orderItems.map(async (oi) => {
         const menuItem = await ctx.db.get(oi.menuItemId);
-        let productName = "Unknown Item";
         let cafeteriaName = "Unknown Cafeteria";
         
         if (menuItem) {
-          const product = await ctx.db.get(menuItem.productId);
-          if (product) productName = product.name;
+          // REMOVED: const product = await ctx.db.get(menuItem.productId);
+          // REMOVED: if (product) productName = product.name;
           const cafeteria = await ctx.db.get(menuItem.cafeteriaId);
           if (cafeteria) cafeteriaName = cafeteria.name;
         }
@@ -286,14 +290,12 @@ export const listMyOrders = query({
 
       const itemsWithDetails = await Promise.all(orderItems.map(async (oi) => {
         const menuItem = await ctx.db.get(oi.menuItemId);
-        let productName = "Unknown Item";
         let cafeteriaName = "Unknown Cafeteria";
         let imageUrl = "";
         
         if (menuItem) {
           const product = await ctx.db.get(menuItem.productId);
           if (product) {
-              productName = product.name;
               imageUrl = product.imageUrl;
           }
           const cafeteria = await ctx.db.get(menuItem.cafeteriaId);
@@ -305,7 +307,7 @@ export const listMyOrders = query({
           menuItemId: oi.menuItemId,
           quantity: oi.quantity,
           price: oi.subtotal,
-          name: productName,
+          name: (await ctx.db.get(menuItem!.productId))?.name || "Unknown Item",
           image: imageUrl,
           restaurant: cafeteriaName
         };
@@ -383,12 +385,10 @@ export const get = query({
 
         const itemsWithDetails = await Promise.all(orderItems.map(async (oi) => {
             const menuItem = await ctx.db.get(oi.menuItemId);
-            let productName = "Unknown Item";
             let cafeteriaName = "Unknown Cafeteria";
             
             if (menuItem) {
-                const product = await ctx.db.get(menuItem.productId);
-                if (product) productName = product.name;
+                await ctx.db.get(menuItem.productId);
                 const cafeteria = await ctx.db.get(menuItem.cafeteriaId);
                 if (cafeteria) cafeteriaName = cafeteria.name;
             }
@@ -398,7 +398,7 @@ export const get = query({
                 menuItemId: oi.menuItemId,
                 quantity: oi.quantity,
                 menu_items: {
-                    products: { name: productName },
+                    products: { name: (await ctx.db.get(menuItem!.productId))?.name || "Unknown Item" },
                     cafeterias: { name: cafeteriaName }
                 }
             };

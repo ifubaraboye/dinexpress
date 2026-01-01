@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Search, Star, Clock, MapPin, ChevronLeft, Share2, Info } from "lucide-react";
+import { Search, Star, Clock, MapPin, Info } from "lucide-react";
 import { RestaurantProvider } from "../../context/RestaurantContext";
 import { FloatingCart } from "@/components/FloatingCart";
 import { ItemSection } from "@/components/ItemSection";
@@ -9,15 +9,14 @@ import type { FoodItem } from "@/components/ItemSection";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { useNavigate, useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { useLocation } from "react-router-dom";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 
 interface RestaurantLayoutProps {
-  id?: string; // Optional Convex Id<"cafeterias">
-  name: string; // Used as fallback or primary key
+  id?: string;
+  name: string;
   image: string;
   deliveryFee: number;
   avgWait: string;
@@ -25,7 +24,6 @@ interface RestaurantLayoutProps {
   reviews: number;
 }
 
-// Helper
 const getValidImage = (url: any): string => {
   if (!url || typeof url !== "string") return "/placeholder.svg";
   if (url.startsWith("http") || url.startsWith("/")) return url;
@@ -41,16 +39,12 @@ export function RestaurantLayout({
   rating,
   reviews,
 }: RestaurantLayoutProps) {
-  const navigate = useNavigate();
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
-  const [scrolled, setScrolled] = useState(false);
 
-  // Try to get ID from state if not provided
   const cafeteriaIdFromState = location.state?.cafeteriaId;
   const finalId = initialId || cafeteriaIdFromState;
 
-  // Query cafeteria by ID or Name to get full details (rating, fees, etc)
   const cafeteria = useQuery(
     finalId ? api.main.getCafeteriaById : api.main.getCafeteriaByName,
     finalId ? { id: finalId as Id<"cafeterias"> } : { name }
@@ -58,7 +52,6 @@ export function RestaurantLayout({
 
   const cafeteriaId = cafeteria?._id || finalId;
 
-  // Use Convex query for menu items
   const menuData = useQuery(api.main.getMenuItemsWithDetails, 
     cafeteriaId ? { cafeteriaId: cafeteriaId as Id<"cafeterias"> } : "skip" as any
   );
@@ -66,11 +59,7 @@ export function RestaurantLayout({
   const loading = menuData === undefined || (cafeteria === undefined && !finalId);
   const error = menuData === null;
 
-  // Scroll effect for sticky header visual
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const groupedSections = useMemo(() => {
@@ -142,11 +131,6 @@ export function RestaurantLayout({
   return (
     <RestaurantProvider value={{ name: cafeteria?.name ?? name, deliveryFee: cafeteria?.deliveryFee ?? deliveryFee }}>
       <div className="bg-white min-h-screen w-full overflow-x-hidden">
-        
-        {/* Navigation Bar (Floating/Sticky) */}
-        
-
-        {/* Immersive Hero */}
         <div className="relative h-[45vh] lg:h-[55vh] w-full group overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent z-10" />
           <img
@@ -180,11 +164,8 @@ export function RestaurantLayout({
           </div>
         </div>
 
-        {/* Content Body */}
         <div className="relative z-30 bg-white min-h-[50vh] rounded-t-3xl -mt-6">
            <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 space-y-10">
-              
-              {/* Modern Search */}
               <div className="sticky top-20 z-40 -mx-4 px-4 md:mx-0 md:px-0 bg-white/95 backdrop-blur-sm py-2">
                  <div className="relative">
                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -197,7 +178,6 @@ export function RestaurantLayout({
                  </div>
               </div>
 
-              {/* Menu Sections */}
               <div className="min-h-[400px]">
                 {loading ? (
                    <div className="space-y-12">
@@ -241,10 +221,8 @@ export function RestaurantLayout({
                   </div>
                 )}
               </div>
-           
            </div>
         </div>
-
         <FloatingCart  />
       </div>
     </RestaurantProvider>

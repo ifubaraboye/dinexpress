@@ -5,10 +5,8 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { 
   ChevronLeft, 
   MapPin, 
-  Phone, 
   MessageSquare, 
   CheckCircle2, 
-  Clock,
   Store,
   Loader2
 } from "lucide-react";
@@ -19,8 +17,6 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import ChatPanel from "@/components/ChatPanel";
-
-type OrderStatus = "CONFIRMED" | "ARRIVED_AT_RESTAURANT" | "PREPARING" | "PICKED_UP" | "ARRIVED_AT_DELIVERY" | "DELIVERED";
 
 const STATUS_STEPS = [
   { status: "CONFIRMED", label: "Order Accepted", description: "You have successfully claimed this order." },

@@ -1,7 +1,6 @@
 "use client"
 
 import { ItemCard } from "../components/ItemCard"
-import { ArrowRight } from "lucide-react"
 
 export interface FoodItem {
   id: string

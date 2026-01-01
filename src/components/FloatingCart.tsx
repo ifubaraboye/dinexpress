@@ -18,7 +18,6 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 const TAKEAWAY_PLATE_FEE = 600;
 

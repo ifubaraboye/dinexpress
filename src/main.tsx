@@ -124,7 +124,7 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-  <ClerkProvider publishableKey="pk_test_cHJlc2VudC1sYWNld2luZy05NC5jbGVyay5hY2NvdW50cy5kZXYk">
+  <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>
    <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
     <RouterProvider router={router} />
     </ConvexProviderWithClerk>

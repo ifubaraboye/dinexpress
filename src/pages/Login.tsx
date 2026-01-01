@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useSignIn, useSignUp } from "@clerk/clerk-react";
-import type { OAuthStrategy } from "@clerk/types";
 
 export default function LoginPage() {
   const { isLoaded: isSignInLoaded, signIn, setActive: setSignInActive } = useSignIn();

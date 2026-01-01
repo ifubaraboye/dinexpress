@@ -1,7 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getOrCreateUserId } from "./helpers/getUserId";
-import type { Id } from "./_generated/dataModel";
 
 export const cafeterias = mutation({
   handler: async (ctx) => {

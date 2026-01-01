@@ -12,7 +12,7 @@ import RateOrderModal from "./RateOrderModal";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import { CheckCircle2, Clock, Ticket, Star, ArrowRight, Loader2, Utensils } from "lucide-react";
+import { CheckCircle2, Ticket, Star, ArrowRight, Loader2, Utensils } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -53,7 +53,7 @@ export default function OrderSuccessModal({
   const handleSubmitItemRatings = async () => {
     // Filter out any invalid menuItemIds and create ratings array
     const ratingsArray = Object.entries(itemRatings)
-      .filter(([menuItemId, rating]) => menuItemId && menuItemId !== "undefined")
+      .filter(([menuItemId]) => menuItemId && menuItemId !== "undefined")
       .map(([menuItemId, rating]) => ({
         menuItemId: menuItemId as Id<"menuItems">,
         rating
@@ -78,11 +78,6 @@ export default function OrderSuccessModal({
     } finally {
       setSubmittingItems(false);
     }
-  };
-
-  const formatDateTime = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   };
 
   // Get items - handle both structures

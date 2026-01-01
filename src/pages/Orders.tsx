@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { 
   ChevronRight, 
   Package, 
   MapPin, 
   Clock, 
   CheckCircle2, 
-  Search,
   Loader2,
   MessageSquare
 } from "lucide-react";
