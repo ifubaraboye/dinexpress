@@ -7,33 +7,159 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useSignIn, useSignUp } from "@clerk/clerk-react";
+import type { OAuthStrategy } from "@clerk/types";
 
 export default function LoginPage() {
+  const { isLoaded: isSignInLoaded, signIn, setActive: setSignInActive } = useSignIn();
+  const { isLoaded: isSignUpLoaded, signUp, setActive: setSignUpActive } = useSignUp();
+
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Form State
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  
+  // Verification State
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const [code, setCode] = useState("");
+
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isSignInLoaded) return;
     setLoading(true);
-    setTimeout(() => {
+
+    try {
+      const result = await signIn.create({
+        identifier: email,
+        password,
+      });
+
+      if (result.status === "complete") {
+        await setSignInActive({ session: result.createdSessionId });
+        toast.success("Welcome back");
+        navigate("/");
+      } else {
+        console.error(JSON.stringify(result, null, 2));
+        toast.error("Something went wrong during sign in.");
+      }
+    } catch (err: any) {
+      console.error(JSON.stringify(err, null, 2));
+      toast.error(err.errors?.[0]?.message || "Failed to sign in");
+    } finally {
       setLoading(false);
-      localStorage.setItem("token", "mock-token-123");
-      toast.success("Welcome back");
-      navigate("/");
-    }, 1000);
+    }
   };
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isSignUpLoaded) return;
     setLoading(true);
-    setTimeout(() => {
+
+    try {
+      await signUp.create({
+        emailAddress: email,
+        password,
+        firstName,
+        lastName,
+      });
+
+      // Prepare email verification
+      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+
+      setPendingVerification(true);
+      toast.success("Verification code sent to your email.");
+    } catch (err: any) {
+      console.error(JSON.stringify(err, null, 2));
+      toast.error(err.errors?.[0]?.message || "Failed to create account");
+    } finally {
       setLoading(false);
-      toast.success("Account created");
-      setActiveTab("login");
-    }, 1000);
+    }
   };
+
+  const handleVerification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isSignUpLoaded) return;
+    setLoading(true);
+
+    try {
+      const completeSignUp = await signUp.attemptEmailAddressVerification({
+        code,
+      });
+
+      if (completeSignUp.status === "complete") {
+        await setSignUpActive({ session: completeSignUp.createdSessionId });
+        toast.success("Account created successfully");
+        navigate("/auth-callback");
+      } else {
+        console.error(JSON.stringify(completeSignUp, null, 2));
+        toast.error("Verification failed. Please try again.");
+      }
+    } catch (err: any) {
+      console.error(JSON.stringify(err, null, 2));
+      toast.error(err.errors?.[0]?.message || "Verification failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    if (!isSignInLoaded) return;
+    try {
+      await signIn.authenticateWithRedirect({
+        strategy: "oauth_google",
+        redirectUrl: "/sso-callback",
+        redirectUrlComplete: "/auth-callback",
+      });
+    } catch (err: any) {
+       console.error(JSON.stringify(err, null, 2));
+       toast.error("Failed to initiate Google login");
+    }
+  };
+
+  // If waiting for verification code, show verification form
+  if (pendingVerification) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 font-sans">
+        <div className="w-full max-w-[360px] space-y-5">
+           <div className="text-center space-y-3">
+              <h1 className="text-2xl font-black tracking-tight text-gray-900">Verify Email</h1>
+              <p className="text-sm text-gray-400 font-medium">
+                Enter the code sent to {email}
+              </p>
+            </div>
+            <form onSubmit={handleVerification} className="space-y-4">
+               <Input 
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="Verification Code" 
+                  className="h-12 bg-gray-50 border-transparent focus:bg-white focus:border-red-100 transition-all rounded-xl shadow-none text-sm font-medium text-center tracking-widest text-lg"
+                  required
+                />
+                <Button 
+                  type="submit" 
+                  disabled={loading}
+                  className="w-full h-12 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all mt-4 shadow-lg shadow-red-100 cursor-pointer border-none"
+                >
+                  {loading ? <Loader2 className="animate-spin" size={18} /> : "Verify Account"}
+                </Button>
+            </form>
+             <button 
+              onClick={() => setPendingVerification(false)}
+              className="w-full text-center text-xs text-gray-400 hover:text-gray-600 font-bold uppercase tracking-wider mt-4"
+            >
+              Back to Sign Up
+            </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 font-sans">
@@ -101,6 +227,8 @@ export default function LoginPage() {
               <form onSubmit={handleLogin} className="space-y-4">
                 <Input 
                   type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email address" 
                   className="h-12 bg-gray-50 border-transparent focus:bg-white focus:border-red-100 transition-all rounded-xl shadow-none text-sm font-medium"
                   required
@@ -108,6 +236,8 @@ export default function LoginPage() {
                 <div className="relative group">
                   <Input 
                     type={showPassword ? "text" : "password"} 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     placeholder="Password" 
                     className="h-12 bg-gray-50 border-transparent focus:bg-white focus:border-red-100 transition-all rounded-xl shadow-none pr-10 text-sm font-medium"
                     required
@@ -141,19 +271,34 @@ export default function LoginPage() {
                 activeTab === "signup" ? "opacity-100" : "opacity-0 pointer-events-none"
             )}>
               <form onSubmit={handleSignup} className="space-y-4">
-                <Input 
-                  placeholder="Full name" 
-                  className="h-12 bg-gray-50 border-transparent focus:bg-white focus:border-red-100 transition-all rounded-xl shadow-none text-sm font-medium"
-                  required
-                />
+                <div className="flex gap-2">
+                  <Input 
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="First name" 
+                    className="h-12 bg-gray-50 border-transparent focus:bg-white focus:border-red-100 transition-all rounded-xl shadow-none text-sm font-medium"
+                    required
+                  />
+                   <Input 
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Last name" 
+                    className="h-12 bg-gray-50 border-transparent focus:bg-white focus:border-red-100 transition-all rounded-xl shadow-none text-sm font-medium"
+                    required
+                  />
+                </div>
                 <Input 
                   type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email address" 
                   className="h-12 bg-gray-50 border-transparent focus:bg-white focus:border-red-100 transition-all rounded-xl shadow-none text-sm font-medium"
                   required
                 />
                 <Input 
                   type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="Create password" 
                   className="h-12 bg-gray-50 border-transparent focus:bg-white focus:border-red-100 transition-all rounded-xl shadow-none text-sm font-medium"
                   required
@@ -183,6 +328,7 @@ export default function LoginPage() {
 
           <button 
             type="button"
+            onClick={handleGoogleLogin}
             className="w-full h-12 flex items-center justify-center gap-3 bg-white border border-gray-100 rounded-xl hover:bg-gray-50 transition-all active:scale-[0.98] cursor-pointer shadow-sm shadow-gray-50"
           >
             <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4 grayscale opacity-70" />
